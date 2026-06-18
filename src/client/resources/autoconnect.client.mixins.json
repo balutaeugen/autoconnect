@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "net.m1dLL3.mixin.client",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "DisconnectedScreenMixin",
+    "JoinMultiplayerScreenMixin",
+    "TitleScreenMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}

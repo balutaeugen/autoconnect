@@ -1,0 +1,21 @@
+pluginManagement {
+    repositories {
+        maven {
+            name = 'Fabric'
+            url = 'https://maven.fabricmc.net/'
+        }
+        gradlePluginPortal()
+    }
+}
+
+plugins {
+    id 'dev.kikugie.stonecutter' version '0.9.6'
+}
+
+rootProject.name = 'AutoConnect'
+
+stonecutter {
+    create(rootProject) {
+        versions '26.1', '26.1.1', '26.1.2', '26.2'
+    }
+}

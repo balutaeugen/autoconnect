@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "autoconnect",
+  "version": "${version}",
+  "name": "AutoConnect",
+  "description": "Automatically connects to your saved multiplayer server when you open Multiplayer, with optional failure retries and a Mod Menu configuration screen.",
+  "authors": [
+    "m1dLL3"
+  ],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "modmenu": [
+      "net.m1dLL3.client.AutoConnectModMenu"
+    ]
+  },
+  "mixins": [
+    {
+      "config": "autoconnect.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "minecraft": "${minecraft_version}"
+  },
+  "suggests": {
+    "modmenu": "${modmenu_dependency}",
+    "cloth-config": "${cloth_config_dependency}"
+  }
+}
