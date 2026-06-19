@@ -61,6 +61,11 @@ Supported loaders:
 
 The `26.1.2` builds are used for the `26.1` compatibility range, because the mod has been tested across `26.1`, `26.1.1`, and `26.1.2` with the same compiled output.
 
+## Downloads
+
+- Modrinth: https://modrinth.com/mod/auto-connect
+- CurseForge: https://www.curseforge.com/minecraft/mc-mods/auto-connect
+
 ## Optional Dependencies
 
 Fabric and Quilt users can install Mod Menu for an in-game configuration entry. Fabric also uses Cloth Config for the Mod Menu configuration screen.
