@@ -333,6 +333,21 @@ if (!rootProject.ext.has("minecraftVersionAliasesRegistered")) {
         from(rootProject.project(":quilt-26.2").layout.buildDirectory.file("libs/${releaseArchiveBaseName}-quilt-${releaseModVersion}-26.2.jar"))
     }
 
+    rootProject.tasks.register("preparePublishArtifacts", Copy) {
+        group = minecraftVersionTaskGroup
+        description = "Creates a clean publish folder containing only the jars that should be uploaded."
+        dependsOn rootProject.tasks.named("buildReleaseJars")
+        into rootProject.layout.projectDirectory.dir("publish")
+
+        doFirst {
+            delete rootProject.layout.projectDirectory.dir("publish")
+        }
+
+        from(rootProject.layout.buildDirectory.dir("libs")) {
+            include "${releaseArchiveBaseName}-*.jar"
+        }
+    }
+
     rootProject.tasks.register("printMinecraftVersionMatrix") {
         group = minecraftVersionTaskGroup
         description = "Prints the Stonecutter Minecraft dependency version matrix."

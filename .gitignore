@@ -4,6 +4,15 @@ build/
 versions/*/build/
 run/
 versions/*/run/
+forge/*/build/
+forge/*/run/
+neoforge/*/build/
+neoforge/*/run/
+quilt/*/.gradle/
+quilt/*/build/
+quilt/*/run/
+publish/
+/net/
 
 *.log
 *.log.gz
