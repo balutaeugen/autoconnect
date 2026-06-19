@@ -32,7 +32,7 @@ public final class AutoConnectClothConfigScreenFactory {
                 .setSaveConsumer(value -> config.enabled = value)
                 .build());
 
-        category.addEntry(entries.startStrField(Component.literal("Server"), config.connectAddress())
+        category.addEntry(entries.startStrField(Component.literal("Server Address"), config.connectAddress())
                 .setDefaultValue("")
                 .setTooltip(
                         Component.literal("Server address to join automatically."),

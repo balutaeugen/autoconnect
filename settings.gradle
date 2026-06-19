@@ -4,18 +4,48 @@ pluginManagement {
             name = 'Fabric'
             url = 'https://maven.fabricmc.net/'
         }
+        maven {
+            name = 'Forge'
+            url = 'https://maven.minecraftforge.net/'
+        }
+        maven {
+            name = 'NeoForge'
+            url = 'https://maven.neoforged.net/releases/'
+        }
+        maven {
+            name = 'Quilt'
+            url = 'https://maven.quiltmc.org/repository/release/'
+        }
         gradlePluginPortal()
     }
 }
 
 plugins {
     id 'dev.kikugie.stonecutter' version '0.9.6'
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
 }
 
 rootProject.name = 'AutoConnect'
 
 stonecutter {
     create(rootProject) {
-        versions '26.1', '26.1.1', '26.1.2', '26.2'
+        versions([
+                'fabric-26.1.2': '26.1.2',
+                'fabric-26.2'  : '26.2'
+        ])
     }
 }
+
+include 'forge-26.1.2'
+include 'forge-26.2'
+include 'neoforge-26.1.2'
+include 'neoforge-26.2'
+include 'quilt-26.1.2'
+include 'quilt-26.2'
+
+project(':forge-26.1.2').projectDir = file('forge/26.1.2')
+project(':forge-26.2').projectDir = file('forge/26.2')
+project(':neoforge-26.1.2').projectDir = file('neoforge/26.1.2')
+project(':neoforge-26.2').projectDir = file('neoforge/26.2')
+project(':quilt-26.1.2').projectDir = file('quilt/26.1.2')
+project(':quilt-26.2').projectDir = file('quilt/26.2')

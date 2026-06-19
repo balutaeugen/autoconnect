@@ -1,0 +1,29 @@
+modLoader="javafml"
+loaderVersion="${forge_version_range}"
+license="MIT"
+clientSideOnly=true
+
+[[mods]]
+modId="autoconnect"
+version="${version}"
+displayName="AutoConnect"
+logoFile="assets/autoconnect/icon.png"
+authors="m1dLL3"
+description='''Automatically joins your saved multiplayer server.'''
+
+[[mixins]]
+config="autoconnect.client.mixins.json"
+
+[[dependencies.autoconnect]]
+    modId="forge"
+    mandatory=true
+    versionRange="${forge_version_range}"
+    ordering="NONE"
+    side="CLIENT"
+
+[[dependencies.autoconnect]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="CLIENT"

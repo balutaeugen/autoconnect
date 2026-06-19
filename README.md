@@ -31,7 +31,7 @@ If retries are enabled and another retry is available, the disconnect screen als
 
 The in-game configuration screen is available through Mod Menu when both Mod Menu and Cloth Config are installed.
 
-If those optional mods are not installed, AutoConnect still works and can be configured from:
+If those optional mods are not installed, or if you are using Forge, NeoForge, or Quilt, AutoConnect still works and can be configured from:
 
 ```text
 config/autoconnect.json
@@ -45,6 +45,18 @@ config/autoconnect.json
 - Mod Menu (Optional)
 - Cloth Config (Optional, required only for the Mod Menu configuration screen)
 
+### Forge
+
+- Minecraft Forge
+
+### NeoForge
+
+- NeoForge
+
+### Quilt
+
+- Quilt Loader
+
 ## Compatibility
 
-AutoConnect currently targets Fabric for Minecraft `26.1` through `26.2`.
+AutoConnect currently targets Fabric, Forge, NeoForge, and Quilt for Minecraft `26.1` through `26.2`.
