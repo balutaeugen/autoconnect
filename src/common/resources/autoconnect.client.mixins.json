@@ -4,6 +4,7 @@
   "package": "net.m1dLL3.mixin.client",
   "compatibilityLevel": "JAVA_21",
   "client": [
+    "ClientPacketListenerMixin",
     "DisconnectedScreenMixin",
     "JoinMultiplayerScreenMixin",
     "TitleScreenMixin"
