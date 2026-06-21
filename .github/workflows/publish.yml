@@ -1,0 +1,407 @@
+name: Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Mod version to build and publish, for example 26.6.1"
+        required: true
+        type: string
+      release_type:
+        description: "Release type used by Modrinth and CurseForge"
+        required: true
+        default: "release"
+        type: choice
+        options:
+          - release
+          - beta
+          - alpha
+      changelog:
+        description: "Changelog shown on Modrinth, CurseForge, and the optional GitHub release"
+        required: true
+        type: string
+      publish_modrinth:
+        description: "Publish to Modrinth"
+        required: true
+        default: true
+        type: boolean
+      publish_curseforge:
+        description: "Publish to CurseForge"
+        required: true
+        default: true
+        type: boolean
+      publish_github_release:
+        description: "Create/update a GitHub release with the built jars"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Build and publish ${{ inputs.version }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.5.0"
+
+      - name: Apply release version
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          version = "${{ inputs.version }}"
+          path = Path("gradle.properties")
+          lines = path.read_text(encoding="utf-8").splitlines()
+          path.write_text(
+              "\n".join(
+                  f"mod_version={version}" if line.startswith("mod_version=") else line
+                  for line in lines
+              ) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Write changelog
+        env:
+          CHANGELOG: ${{ inputs.changelog }}
+        run: |
+          mkdir -p build
+          printf '%s\n' "$CHANGELOG" > build/publish-changelog.md
+
+      - name: Build publish artifacts
+        run: gradle preparePublishArtifacts --no-daemon --console=plain
+
+      - name: Publish GitHub release
+        if: ${{ inputs.publish_github_release }}
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-tag: ${{ inputs.version }}
+          github-commitish: ${{ github.sha }}
+          github-draft: false
+          github-prerelease: ${{ inputs.release_type != 'release' }}
+          files: publish/*.jar
+          name: AutoConnect ${{ inputs.version }}
+          version: ${{ inputs.version }}
+          version-type: ${{ inputs.release_type }}
+          changelog-file: build/publish-changelog.md
+          retry-attempts: 3
+
+      - name: Publish Modrinth Fabric 26.1-26.1.2
+        if: ${{ inputs.publish_modrinth }}
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          modrinth-id: HwkBvmkg
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          modrinth-unfeature-mode: none
+          files: publish/autoconnect-fabric-${{ inputs.version }}-26.1-26.1.2.jar
+          name: AutoConnect ${{ inputs.version }} Fabric 26.1-26.1.2
+          version: ${{ inputs.version }}+fabric-26.1-26.1.2
+          version-type: ${{ inputs.release_type }}
+          changelog-file: build/publish-changelog.md
+          loaders: fabric
+          game-versions: |
+            26.1
+            26.1.1
+            26.1.2
+          game-version-filter: none
+          java: "25"
+          retry-attempts: 3
+
+      - name: Publish Modrinth Fabric 26.2
+        if: ${{ inputs.publish_modrinth }}
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          modrinth-id: HwkBvmkg
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          modrinth-unfeature-mode: none
+          files: publish/autoconnect-fabric-${{ inputs.version }}-26.2.jar
+          name: AutoConnect ${{ inputs.version }} Fabric 26.2
+          version: ${{ inputs.version }}+fabric-26.2
+          version-type: ${{ inputs.release_type }}
+          changelog-file: build/publish-changelog.md
+          loaders: fabric
+          game-versions: 26.2
+          game-version-filter: none
+          java: "25"
+          retry-attempts: 3
+
+      - name: Publish Modrinth Forge 26.1-26.1.2
+        if: ${{ inputs.publish_modrinth }}
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          modrinth-id: HwkBvmkg
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          modrinth-unfeature-mode: none
+          files: publish/autoconnect-forge-${{ inputs.version }}-26.1-26.1.2.jar
+          name: AutoConnect ${{ inputs.version }} Forge 26.1-26.1.2
+          version: ${{ inputs.version }}+forge-26.1-26.1.2
+          version-type: ${{ inputs.release_type }}
+          changelog-file: build/publish-changelog.md
+          loaders: forge
+          game-versions: |
+            26.1
+            26.1.1
+            26.1.2
+          game-version-filter: none
+          java: "25"
+          retry-attempts: 3
+
+      - name: Publish Modrinth Forge 26.2
+        if: ${{ inputs.publish_modrinth }}
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          modrinth-id: HwkBvmkg
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          modrinth-unfeature-mode: none
+          files: publish/autoconnect-forge-${{ inputs.version }}-26.2.jar
+          name: AutoConnect ${{ inputs.version }} Forge 26.2
+          version: ${{ inputs.version }}+forge-26.2
+          version-type: ${{ inputs.release_type }}
+          changelog-file: build/publish-changelog.md
+          loaders: forge
+          game-versions: 26.2
+          game-version-filter: none
+          java: "25"
+          retry-attempts: 3
+
+      - name: Publish Modrinth NeoForge 26.1-26.1.2
+        if: ${{ inputs.publish_modrinth }}
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          modrinth-id: HwkBvmkg
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          modrinth-unfeature-mode: none
+          files: publish/autoconnect-neoforge-${{ inputs.version }}-26.1-26.1.2.jar
+          name: AutoConnect ${{ inputs.version }} NeoForge 26.1-26.1.2
+          version: ${{ inputs.version }}+neoforge-26.1-26.1.2
+          version-type: ${{ inputs.release_type }}
+          changelog-file: build/publish-changelog.md
+          loaders: neoforge
+          game-versions: |
+            26.1
+            26.1.1
+            26.1.2
+          game-version-filter: none
+          java: "25"
+          retry-attempts: 3
+
+      - name: Publish Modrinth NeoForge 26.2
+        if: ${{ inputs.publish_modrinth }}
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          modrinth-id: HwkBvmkg
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          modrinth-unfeature-mode: none
+          files: publish/autoconnect-neoforge-${{ inputs.version }}-26.2.jar
+          name: AutoConnect ${{ inputs.version }} NeoForge 26.2
+          version: ${{ inputs.version }}+neoforge-26.2
+          version-type: ${{ inputs.release_type }}
+          changelog-file: build/publish-changelog.md
+          loaders: neoforge
+          game-versions: 26.2
+          game-version-filter: none
+          java: "25"
+          retry-attempts: 3
+
+      - name: Publish Modrinth Quilt 26.1-26.1.2
+        if: ${{ inputs.publish_modrinth }}
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          modrinth-id: HwkBvmkg
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          modrinth-unfeature-mode: none
+          files: publish/autoconnect-quilt-${{ inputs.version }}-26.1-26.1.2.jar
+          name: AutoConnect ${{ inputs.version }} Quilt 26.1-26.1.2
+          version: ${{ inputs.version }}+quilt-26.1-26.1.2
+          version-type: ${{ inputs.release_type }}
+          changelog-file: build/publish-changelog.md
+          loaders: quilt
+          game-versions: |
+            26.1
+            26.1.1
+            26.1.2
+          game-version-filter: none
+          java: "25"
+          retry-attempts: 3
+
+      - name: Publish Modrinth Quilt 26.2
+        if: ${{ inputs.publish_modrinth }}
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          modrinth-id: HwkBvmkg
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          modrinth-unfeature-mode: none
+          files: publish/autoconnect-quilt-${{ inputs.version }}-26.2.jar
+          name: AutoConnect ${{ inputs.version }} Quilt 26.2
+          version: ${{ inputs.version }}+quilt-26.2
+          version-type: ${{ inputs.release_type }}
+          changelog-file: build/publish-changelog.md
+          loaders: quilt
+          game-versions: 26.2
+          game-version-filter: none
+          java: "25"
+          retry-attempts: 3
+
+      - name: Publish CurseForge Fabric 26.1-26.1.2
+        if: ${{ inputs.publish_curseforge }}
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          curseforge-id: 1580976
+          curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
+          files: publish/autoconnect-fabric-${{ inputs.version }}-26.1-26.1.2.jar
+          name: AutoConnect ${{ inputs.version }} Fabric 26.1-26.1.2
+          version: ${{ inputs.version }}+fabric-26.1-26.1.2
+          version-type: ${{ inputs.release_type }}
+          changelog-file: build/publish-changelog.md
+          loaders: fabric
+          game-versions: |
+            26.1
+            26.1.1
+            26.1.2
+          game-version-filter: none
+          java: "25"
+          retry-attempts: 3
+
+      - name: Publish CurseForge Fabric 26.2
+        if: ${{ inputs.publish_curseforge }}
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          curseforge-id: 1580976
+          curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
+          files: publish/autoconnect-fabric-${{ inputs.version }}-26.2.jar
+          name: AutoConnect ${{ inputs.version }} Fabric 26.2
+          version: ${{ inputs.version }}+fabric-26.2
+          version-type: ${{ inputs.release_type }}
+          changelog-file: build/publish-changelog.md
+          loaders: fabric
+          game-versions: 26.2
+          game-version-filter: none
+          java: "25"
+          retry-attempts: 3
+
+      - name: Publish CurseForge Forge 26.1-26.1.2
+        if: ${{ inputs.publish_curseforge }}
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          curseforge-id: 1580976
+          curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
+          files: publish/autoconnect-forge-${{ inputs.version }}-26.1-26.1.2.jar
+          name: AutoConnect ${{ inputs.version }} Forge 26.1-26.1.2
+          version: ${{ inputs.version }}+forge-26.1-26.1.2
+          version-type: ${{ inputs.release_type }}
+          changelog-file: build/publish-changelog.md
+          loaders: forge
+          game-versions: |
+            26.1
+            26.1.1
+            26.1.2
+          game-version-filter: none
+          java: "25"
+          retry-attempts: 3
+
+      - name: Publish CurseForge Forge 26.2
+        if: ${{ inputs.publish_curseforge }}
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          curseforge-id: 1580976
+          curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
+          files: publish/autoconnect-forge-${{ inputs.version }}-26.2.jar
+          name: AutoConnect ${{ inputs.version }} Forge 26.2
+          version: ${{ inputs.version }}+forge-26.2
+          version-type: ${{ inputs.release_type }}
+          changelog-file: build/publish-changelog.md
+          loaders: forge
+          game-versions: 26.2
+          game-version-filter: none
+          java: "25"
+          retry-attempts: 3
+
+      - name: Publish CurseForge NeoForge 26.1-26.1.2
+        if: ${{ inputs.publish_curseforge }}
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          curseforge-id: 1580976
+          curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
+          files: publish/autoconnect-neoforge-${{ inputs.version }}-26.1-26.1.2.jar
+          name: AutoConnect ${{ inputs.version }} NeoForge 26.1-26.1.2
+          version: ${{ inputs.version }}+neoforge-26.1-26.1.2
+          version-type: ${{ inputs.release_type }}
+          changelog-file: build/publish-changelog.md
+          loaders: neoforge
+          game-versions: |
+            26.1
+            26.1.1
+            26.1.2
+          game-version-filter: none
+          java: "25"
+          retry-attempts: 3
+
+      - name: Publish CurseForge NeoForge 26.2
+        if: ${{ inputs.publish_curseforge }}
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          curseforge-id: 1580976
+          curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
+          files: publish/autoconnect-neoforge-${{ inputs.version }}-26.2.jar
+          name: AutoConnect ${{ inputs.version }} NeoForge 26.2
+          version: ${{ inputs.version }}+neoforge-26.2
+          version-type: ${{ inputs.release_type }}
+          changelog-file: build/publish-changelog.md
+          loaders: neoforge
+          game-versions: 26.2
+          game-version-filter: none
+          java: "25"
+          retry-attempts: 3
+
+      - name: Publish CurseForge Quilt 26.1-26.1.2
+        if: ${{ inputs.publish_curseforge }}
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          curseforge-id: 1580976
+          curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
+          files: publish/autoconnect-quilt-${{ inputs.version }}-26.1-26.1.2.jar
+          name: AutoConnect ${{ inputs.version }} Quilt 26.1-26.1.2
+          version: ${{ inputs.version }}+quilt-26.1-26.1.2
+          version-type: ${{ inputs.release_type }}
+          changelog-file: build/publish-changelog.md
+          loaders: quilt
+          game-versions: |
+            26.1
+            26.1.1
+            26.1.2
+          game-version-filter: none
+          java: "25"
+          retry-attempts: 3
+
+      - name: Publish CurseForge Quilt 26.2
+        if: ${{ inputs.publish_curseforge }}
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          curseforge-id: 1580976
+          curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
+          files: publish/autoconnect-quilt-${{ inputs.version }}-26.2.jar
+          name: AutoConnect ${{ inputs.version }} Quilt 26.2
+          version: ${{ inputs.version }}+quilt-26.2
+          version-type: ${{ inputs.release_type }}
+          changelog-file: build/publish-changelog.md
+          loaders: quilt
+          game-versions: 26.2
+          game-version-filter: none
+          java: "25"
+          retry-attempts: 3

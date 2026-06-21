@@ -1,0 +1,100 @@
+def neoForgeTargets = [
+        "neoforge-26.1.2": [
+                minecraftVersion: "26.1.2",
+                neoForgeVersion : "26.1.2.76",
+                minecraftRange  : "[26.1,26.1.2]",
+                neoForgeRange   : "[26.1.2.76,)"
+        ],
+        "neoforge-26.2"  : [
+                minecraftVersion: "26.2",
+                neoForgeVersion : "26.2.0.3-beta",
+                minecraftRange  : "[26.2]",
+                neoForgeRange   : "[26.2.0.3-beta,)"
+        ]
+]
+
+def neoForgeTarget = neoForgeTargets[project.name]
+if (neoForgeTarget == null) {
+    throw new GradleException("No NeoForge target configured for ${project.name}.")
+}
+
+version = rootProject.mod_version
+group = rootProject.maven_group
+base.archivesName = "${rootProject.archives_base_name}-neoforge"
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
+java.sourceCompatibility = JavaVersion.VERSION_25
+java.targetCompatibility = JavaVersion.VERSION_25
+
+sourceSets {
+    main {
+        java {
+            srcDir rootProject.file("src/common/java")
+            srcDir rootProject.file("src/neoforge/java")
+        }
+        resources {
+            srcDir rootProject.file("src/common/resources")
+            srcDir rootProject.file("src/neoforge/resources")
+        }
+    }
+    test {
+        java.setSrcDirs([])
+        resources.setSrcDirs([])
+    }
+}
+
+neoForge {
+    version = neoForgeTarget.neoForgeVersion
+
+    runs {
+        client {
+            client()
+            gameDirectory = project.file("run")
+        }
+    }
+
+    mods {
+        autoconnect {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+processResources {
+    inputs.property "version", project.version
+    inputs.property "minecraft_version_range", neoForgeTarget.minecraftRange
+    inputs.property "neoforge_version_range", neoForgeTarget.neoForgeRange
+    filteringCharset "UTF-8"
+
+    filesMatching("META-INF/neoforge.mods.toml") {
+        expand "version": project.version,
+                "minecraft_version_range": neoForgeTarget.minecraftRange,
+                "neoforge_version_range": neoForgeTarget.neoForgeRange
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = "UTF-8"
+    options.release.set(25)
+    source = rootProject.fileTree("src/common/java") + rootProject.fileTree("src/neoforge/java")
+}
+
+tasks.named("jar", Jar) {
+    archiveVersion.set("${project.version}-${neoForgeTarget.minecraftVersion}")
+
+    manifest {
+        attributes["MixinConfigs"] = "autoconnect.client.mixins.json"
+    }
+
+    from(rootProject.file("LICENSE.txt")) {
+        rename { "${it}_${rootProject.archives_base_name}" }
+    }
+}
+
+tasks.withType(Test).configureEach {
+    enabled = false
+}
+
+tasks.named("compileTestJava").configure {
+    enabled = false
+}

@@ -1,0 +1,370 @@
+buildscript {
+    repositories {
+        maven {
+            name = 'Fabric'
+            url = 'https://maven.fabricmc.net/'
+        }
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'net.fabricmc:fabric-loom:1.17.11'
+    }
+}
+
+plugins {
+    id 'maven-publish'
+}
+
+apply plugin: 'fabric-loom'
+apply plugin: 'dev.kikugie.stonecutter'
+
+version = project.mod_version
+group = project.maven_group
+
+def targetJavaVersion = 25
+
+allprojects {
+    plugins.withType(JavaPlugin).configureEach {
+        java {
+            toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+            sourceCompatibility = JavaVersion.toVersion(targetJavaVersion)
+            targetCompatibility = JavaVersion.toVersion(targetJavaVersion)
+        }
+
+        tasks.withType(JavaCompile).configureEach {
+            options.encoding = "UTF-8"
+            options.release.set(targetJavaVersion)
+        }
+    }
+}
+
+def minecraftVersion = stonecutter.current.version
+def minecraftVersions = [
+        "26.1.2": [
+                minecraftDependency : ">=26.1 <=26.1.2",
+                modMenu              : "18.0.0-beta.1",
+                modMenuDependency    : ">=18.0.0-beta.1",
+                clothConfig          : "26.1.154",
+                clothConfigDependency: ">=26.1.154"
+        ],
+        "26.2"  : [
+                minecraftDependency : "26.2",
+                modMenu              : "20.0.0-alpha.1",
+                modMenuDependency    : ">=20.0.0-alpha.1",
+                clothConfig          : "26.2.155",
+                clothConfigDependency: ">=26.2.155"
+        ]
+]
+def minecraftConfig = minecraftVersions[minecraftVersion]
+
+if (minecraftConfig == null) {
+    throw new GradleException("No dependency versions configured for Minecraft ${minecraftVersion}.")
+}
+
+configurations {
+    modMenuRuntime
+    clothConfigRuntime
+}
+
+base {
+    archivesName = "${project.archives_base_name}-fabric"
+}
+
+loom {
+    splitEnvironmentSourceSets()
+    noIntermediateMappings()
+    productionNamespace = "named"
+
+    mods {
+        "autoconnect" {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+        }
+    }
+}
+
+sourceSets {
+    main {
+        java.setSrcDirs([])
+        resources.setSrcDirs([
+                rootProject.file("src/common/resources"),
+                rootProject.file("src/fabric/resources")
+        ])
+    }
+    client {
+        java.setSrcDirs([
+                rootProject.file("src/common/java"),
+                rootProject.file("src/fabric/java")
+        ])
+        resources.setSrcDirs([])
+    }
+}
+
+repositories {
+    maven {
+        name = "Terraformers"
+        url = "https://maven.terraformersmc.com/releases/"
+    }
+    maven {
+        name = "Shedaniel"
+        url = "https://maven.shedaniel.me/"
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraftVersion}"
+    mappings loom.layered {
+        mappings(rootProject.file("gradle/identity-mappings.tiny")) {
+            fallbackNamespaces("official", "named")
+        }
+    }
+
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    modClientCompileOnly "com.terraformersmc:modmenu:${minecraftConfig.modMenu}"
+    modMenuRuntime("com.terraformersmc:modmenu:${minecraftConfig.modMenu}") {
+        transitive = false
+    }
+    clientCompileOnly("me.shedaniel.cloth:cloth-config-fabric:${minecraftConfig.clothConfig}") {
+        exclude module: "fabric-api"
+        exclude module: "fabric-loader"
+    }
+    clothConfigRuntime("me.shedaniel.cloth:cloth-config-fabric:${minecraftConfig.clothConfig}") {
+        transitive = false
+    }
+
+    def mixinVersion = "0.17.3+mixin.0.8.7"
+    def asmVersion = "9.8"
+    [
+            "net.fabricmc:sponge-mixin:${mixinVersion}",
+            "org.ow2.asm:asm:${asmVersion}",
+            "org.ow2.asm:asm-analysis:${asmVersion}",
+            "org.ow2.asm:asm-commons:${asmVersion}",
+            "org.ow2.asm:asm-tree:${asmVersion}",
+            "org.ow2.asm:asm-util:${asmVersion}"
+    ].each {
+        compileOnly it
+        clientCompileOnly it
+        runtimeOnly it
+        clientRuntimeOnly it
+    }
+}
+
+tasks.register("copyModMenuToRunMods", Copy) {
+    group = "fabric"
+    description = "Copies Mod Menu into run/mods for local client testing without making it a required dependency."
+    from configurations.modMenuRuntime
+    into layout.projectDirectory.dir("run/mods")
+}
+
+tasks.named("runClient") {
+    dependsOn tasks.named("copyModMenuToRunMods")
+}
+
+tasks.register("copyClothConfigToRunMods", Copy) {
+    group = "fabric"
+    description = "Copies Cloth Config into run/mods for local Mod Menu config screen testing without making it required."
+    from configurations.clothConfigRuntime
+    into layout.projectDirectory.dir("run/mods")
+}
+
+tasks.named("runClient") {
+    dependsOn tasks.named("copyClothConfigToRunMods")
+}
+
+processResources {
+    inputs.property "version", project.version
+    inputs.property "minecraft_version", minecraftConfig.minecraftDependency
+    inputs.property "loader_version", project.loader_version
+    inputs.property "modmenu_dependency", minecraftConfig.modMenuDependency
+    inputs.property "cloth_config_dependency", minecraftConfig.clothConfigDependency
+    filteringCharset "UTF-8"
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version,
+                "minecraft_version": minecraftConfig.minecraftDependency,
+                "loader_version": project.loader_version,
+                "modmenu_dependency": minecraftConfig.modMenuDependency,
+                "cloth_config_dependency": minecraftConfig.clothConfigDependency
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = "UTF-8"
+    options.release.set(targetJavaVersion)
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+    sourceCompatibility = JavaVersion.toVersion(targetJavaVersion)
+    targetCompatibility = JavaVersion.toVersion(targetJavaVersion)
+}
+
+jar {
+    archiveVersion.set("${project.version}-${minecraftVersion}")
+
+    from(rootProject.file("LICENSE.txt")) {
+        rename { "${it}_${project.archives_base_name}" }
+    }
+}
+
+tasks.named("remapJar") {
+    archiveVersion.set("${project.version}-${minecraftVersion}")
+}
+
+tasks.named("runClient") {
+    dependsOn tasks.named("remapJar")
+    mustRunAfter tasks.named("remapJar")
+}
+
+tasks.register("buildJarAndRunClient") {
+    group = "fabric"
+    description = "Builds the remapped mod jar, then launches the Minecraft client with the mod loaded."
+    dependsOn tasks.named("remapJar")
+    dependsOn tasks.named("runClient")
+}
+
+if (!rootProject.ext.has("minecraftVersionAliasesRegistered")) {
+    rootProject.ext.minecraftVersionAliasesRegistered = true
+    def minecraftVersionTaskGroup = "minecraft versions"
+    def rootMinecraftVersions = minecraftVersions
+    def releaseArchiveBaseName = project.archives_base_name
+    def releaseModVersion = project.version
+
+    rootMinecraftVersions.each { mcVersion, mcConfig ->
+        def taskSuffix = mcVersion.replace(".", "_")
+        rootProject.tasks.register("buildFabric${taskSuffix}") {
+            group = minecraftVersionTaskGroup
+            description = "Builds the Fabric mod with Stonecutter for Minecraft ${mcVersion}."
+            dependsOn ":fabric-${mcVersion}:build"
+        }
+
+        rootProject.tasks.register("launchFabric${taskSuffix}") {
+            group = minecraftVersionTaskGroup
+            description = "Launches the Fabric client with Stonecutter for Minecraft ${mcVersion}."
+            dependsOn ":fabric-${mcVersion}:runClient"
+        }
+    }
+
+    [
+            "26.1_2": "26.1.2",
+            "26_2"  : "26.2"
+    ].each { taskSuffix, mcVersion ->
+        rootProject.tasks.register("buildNeoForge${taskSuffix}") {
+            group = minecraftVersionTaskGroup
+            description = "Builds the NeoForge mod for Minecraft ${mcVersion}."
+            dependsOn ":neoforge-${mcVersion}:build"
+        }
+
+        rootProject.tasks.register("launchNeoForge${taskSuffix}") {
+            group = minecraftVersionTaskGroup
+            description = "Launches the NeoForge client for Minecraft ${mcVersion}."
+            dependsOn ":neoforge-${mcVersion}:runClient"
+        }
+    }
+
+    [
+            "26.1_2": "26.1.2",
+            "26_2"  : "26.2"
+    ].each { taskSuffix, mcVersion ->
+        rootProject.tasks.register("buildQuilt${taskSuffix}") {
+            group = minecraftVersionTaskGroup
+            description = "Builds the Quilt mod for Minecraft ${mcVersion}."
+            dependsOn ":quilt-${mcVersion}:build"
+        }
+
+        rootProject.tasks.register("launchQuilt${taskSuffix}") {
+            group = minecraftVersionTaskGroup
+            description = "Launches the Quilt client for Minecraft ${mcVersion}."
+            dependsOn ":quilt-${mcVersion}:runClient"
+        }
+    }
+
+    rootProject.tasks.register("checkAllMinecraftVersions") {
+        group = minecraftVersionTaskGroup
+        description = "Builds every Fabric Stonecutter Minecraft version."
+        dependsOn rootMinecraftVersions.keySet().collect { ":fabric-${it}:build" }
+    }
+
+    rootProject.tasks.register("buildReleaseJars", Copy) {
+        group = minecraftVersionTaskGroup
+        description = "Builds and collects the uploadable release jars."
+        dependsOn rootProject.tasks.named("checkAllMinecraftVersions")
+        dependsOn ":forge-26.1.2:build", ":forge-26.2:build"
+        dependsOn ":neoforge-26.1.2:build", ":neoforge-26.2:build"
+        dependsOn ":quilt-26.1.2:build", ":quilt-26.2:build"
+        into rootProject.layout.buildDirectory.dir("libs")
+
+        doFirst {
+            delete rootProject.fileTree(rootProject.layout.buildDirectory.dir("libs")) {
+                include "${releaseArchiveBaseName}-*.jar"
+            }
+        }
+
+        from(rootProject.project(":fabric-26.1.2").layout.buildDirectory.file("libs/${releaseArchiveBaseName}-fabric-${releaseModVersion}-26.1.2.jar")) {
+            rename {
+                "${releaseArchiveBaseName}-fabric-${releaseModVersion}-26.1-26.1.2.jar"
+            }
+        }
+
+        from(rootProject.project(":fabric-26.2").layout.buildDirectory.file("libs/${releaseArchiveBaseName}-fabric-${releaseModVersion}-26.2.jar"))
+
+        from(rootProject.project(":forge-26.1.2").layout.buildDirectory.file("libs/${releaseArchiveBaseName}-forge-${releaseModVersion}-26.1.2.jar")) {
+            rename {
+                "${releaseArchiveBaseName}-forge-${releaseModVersion}-26.1-26.1.2.jar"
+            }
+        }
+
+        from(rootProject.project(":forge-26.2").layout.buildDirectory.file("libs/${releaseArchiveBaseName}-forge-${releaseModVersion}-26.2.jar"))
+
+        from(rootProject.project(":neoforge-26.1.2").layout.buildDirectory.file("libs/${releaseArchiveBaseName}-neoforge-${releaseModVersion}-26.1.2.jar")) {
+            rename {
+                "${releaseArchiveBaseName}-neoforge-${releaseModVersion}-26.1-26.1.2.jar"
+            }
+        }
+
+        from(rootProject.project(":neoforge-26.2").layout.buildDirectory.file("libs/${releaseArchiveBaseName}-neoforge-${releaseModVersion}-26.2.jar"))
+
+        from(rootProject.project(":quilt-26.1.2").layout.buildDirectory.file("libs/${releaseArchiveBaseName}-quilt-${releaseModVersion}-26.1.2.jar")) {
+            rename {
+                "${releaseArchiveBaseName}-quilt-${releaseModVersion}-26.1-26.1.2.jar"
+            }
+        }
+
+        from(rootProject.project(":quilt-26.2").layout.buildDirectory.file("libs/${releaseArchiveBaseName}-quilt-${releaseModVersion}-26.2.jar"))
+    }
+
+    rootProject.tasks.register("preparePublishArtifacts", Copy) {
+        group = minecraftVersionTaskGroup
+        description = "Creates a clean publish folder containing only the jars that should be uploaded."
+        dependsOn rootProject.tasks.named("buildReleaseJars")
+        into rootProject.layout.projectDirectory.dir("publish")
+
+        doFirst {
+            delete rootProject.layout.projectDirectory.dir("publish")
+        }
+
+        from(rootProject.layout.buildDirectory.dir("libs")) {
+            include "${releaseArchiveBaseName}-*.jar"
+        }
+    }
+
+    rootProject.tasks.register("printMinecraftVersionMatrix") {
+        group = minecraftVersionTaskGroup
+        description = "Prints the Stonecutter Minecraft dependency version matrix."
+
+        doLast {
+            rootMinecraftVersions.each { mcVersion, mcConfig ->
+                logger.lifecycle("${mcVersion}: Mod Menu ${mcConfig.modMenu} (${mcConfig.modMenuDependency}), Cloth Config ${mcConfig.clothConfig} (${mcConfig.clothConfigDependency})")
+            }
+        }
+    }
+}
+
+publishing {
+    publications {
+        create("mavenJava", MavenPublication) {
+            artifactId = project.archives_base_name
+            from components.java
+        }
+    }
+}

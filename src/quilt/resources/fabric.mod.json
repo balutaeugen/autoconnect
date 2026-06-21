@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "autoconnect",
+  "version": "${version}",
+  "name": "AutoConnect",
+  "description": "Automatically joins your saved multiplayer server.",
+  "authors": [
+    "m1dLL3"
+  ],
+  "license": "MIT",
+  "icon": "assets/autoconnect/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "modmenu": [
+      "net.m1dLL3.client.AutoConnectModMenu"
+    ]
+  },
+  "mixins": [
+    {
+      "config": "autoconnect.client.mixins.json",
+      "environment": "client"
+    },
+    {
+      "config": "autoconnect.quilt.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${fabric_loader_dependency}",
+    "minecraft": "${minecraft_version}"
+  },
+  "suggests": {
+    "modmenu": "${modmenu_dependency}"
+  }
+}

@@ -1,0 +1,241 @@
+def quiltTargets = [
+        "quilt-26.1.2": [
+                minecraftVersion: "26.1.2",
+                minecraftRange  : ">=26.1 <=26.1.2",
+                modMenu         : "18.0.0-beta.1",
+                modMenuDependency: ">=18.0.0-beta.1"
+        ],
+        "quilt-26.2"  : [
+                minecraftVersion: "26.2",
+                minecraftRange  : "26.2",
+                modMenu         : "20.0.0-beta.3",
+                modMenuDependency: ">=20.0.0-beta.3"
+        ]
+]
+
+def quiltTarget = quiltTargets[project.name]
+if (quiltTarget == null) {
+    throw new GradleException("No Quilt target configured for ${project.name}.")
+}
+
+version = rootProject.mod_version
+group = rootProject.maven_group
+
+def quiltLoaderVersion = "0.30.0-beta.8"
+def fabricLoaderDependency = "0.17.2"
+def quiltJson5Version = "1.0.4+final"
+def quiltConfigVersion = "1.3.3"
+def targetJavaVersion = 25
+
+configurations {
+    modMenuRuntime
+}
+
+base {
+    archivesName = "${rootProject.archives_base_name}-quilt"
+}
+
+loom {
+    splitEnvironmentSourceSets()
+    noIntermediateMappings()
+    productionNamespace = "named"
+}
+
+sourceSets {
+    main {
+        java.setSrcDirs([])
+        resources.setSrcDirs([
+                rootProject.file("src/common/resources"),
+                rootProject.file("src/quilt/resources")
+        ])
+    }
+    client {
+        java.setSrcDirs([
+                rootProject.file("src/common/java"),
+                rootProject.file("src/quilt/java")
+        ])
+        resources.setSrcDirs([])
+    }
+}
+
+repositories {
+    maven {
+        name = "Quilt"
+        url = "https://maven.quiltmc.org/repository/release/"
+    }
+    maven {
+        name = "Terraformers"
+        url = "https://maven.terraformersmc.com/releases/"
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${quiltTarget.minecraftVersion}"
+    mappings loom.layered {
+        mappings(rootProject.file("gradle/identity-mappings.tiny")) {
+            fallbackNamespaces("official", "named")
+        }
+    }
+
+    implementation "org.quiltmc:quilt-loader:${quiltLoaderVersion}"
+    compileOnly("com.terraformersmc:modmenu:${quiltTarget.modMenu}") {
+        transitive = false
+    }
+    modMenuRuntime("com.terraformersmc:modmenu:${quiltTarget.modMenu}") {
+        transitive = false
+    }
+    [
+            "org.quiltmc:quilt-json5:${quiltJson5Version}",
+            "org.quiltmc:quilt-config:${quiltConfigVersion}"
+    ].each {
+        runtimeOnly it
+        clientRuntimeOnly it
+    }
+
+    def mixinVersion = "0.17.3+mixin.0.8.7"
+    def asmVersion = "9.8"
+    [
+            "net.fabricmc:sponge-mixin:${mixinVersion}",
+            "org.ow2.asm:asm:${asmVersion}",
+            "org.ow2.asm:asm-analysis:${asmVersion}",
+            "org.ow2.asm:asm-commons:${asmVersion}",
+            "org.ow2.asm:asm-tree:${asmVersion}",
+            "org.ow2.asm:asm-util:${asmVersion}"
+    ].each {
+        compileOnly it
+        clientCompileOnly it
+        runtimeOnly it
+        clientRuntimeOnly it
+    }
+}
+
+processResources {
+    inputs.property "version", project.version
+    inputs.property "minecraft_version", quiltTarget.minecraftRange
+    inputs.property "fabric_loader_dependency", fabricLoaderDependency
+    inputs.property "modmenu_dependency", quiltTarget.modMenuDependency
+    filteringCharset "UTF-8"
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version,
+                "minecraft_version": quiltTarget.minecraftRange,
+                "fabric_loader_dependency": fabricLoaderDependency,
+                "modmenu_dependency": quiltTarget.modMenuDependency
+    }
+}
+
+tasks.register("copyModMenuToRunMods", Copy) {
+    group = "quilt"
+    description = "Copies Mod Menu into run/mods for local Quilt config screen testing without making it required."
+    from configurations.modMenuRuntime
+    into layout.projectDirectory.dir("run/mods")
+}
+
+tasks.register("copyBuiltModToRunMods", Copy) {
+    group = "quilt"
+    description = "Copies the built AutoConnect Quilt jar into run/mods for testing the packaged mod."
+    dependsOn tasks.named("addFabricMetadataToRemappedJar")
+
+    from(tasks.named("remapJar").flatMap { it.archiveFile })
+    into layout.projectDirectory.dir("run/mods")
+
+    doFirst {
+        delete fileTree(layout.projectDirectory.dir("run/mods")) {
+            include "${rootProject.archives_base_name}-quilt-*.jar"
+        }
+    }
+}
+
+tasks.register("prepareRunMods") {
+    group = "quilt"
+    description = "Copies Mod Menu and the built AutoConnect Quilt jar into run/mods for packaged-mod testing."
+    dependsOn tasks.named("copyModMenuToRunMods")
+    dependsOn tasks.named("copyBuiltModToRunMods")
+}
+
+tasks.register("configureModMenuForDevRun") {
+    group = "quilt"
+    description = "Configures local Quilt runClient so Mod Menu shows Loom's generated classpath mod entries."
+
+    doLast {
+        def configFile = layout.projectDirectory.file("run/config/modmenu.json").asFile
+        configFile.parentFile.mkdirs()
+
+        def config = [:]
+        if (configFile.exists() && configFile.text.trim()) {
+            config = new groovy.json.JsonSlurper().parse(configFile) as Map
+        }
+
+        config.show_libraries = "true"
+        config.count_libraries = true
+        configFile.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(config))
+    }
+}
+
+tasks.register("hideClasspathModMetadataForPackagedRun") {
+    group = "quilt"
+    description = "Removes generated classpath mod metadata before runClient so Quilt loads the packaged jar from run/mods."
+    dependsOn tasks.named("prepareRunMods")
+
+    doLast {
+        delete layout.buildDirectory.file("resources/main/fabric.mod.json")
+        delete layout.buildDirectory.file("resources/main/quilt.mod.json")
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = "UTF-8"
+    options.release.set(targetJavaVersion)
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+    sourceCompatibility = JavaVersion.toVersion(targetJavaVersion)
+    targetCompatibility = JavaVersion.toVersion(targetJavaVersion)
+}
+
+jar {
+    archiveVersion.set("${project.version}-${quiltTarget.minecraftVersion}")
+
+    from(rootProject.file("LICENSE.txt")) {
+        rename { "${it}_${rootProject.archives_base_name}" }
+    }
+}
+
+tasks.named("remapJar") {
+    archiveVersion.set("${project.version}-${quiltTarget.minecraftVersion}")
+}
+
+tasks.register("addFabricMetadataToRemappedJar") {
+    group = "quilt"
+    description = "Adds Fabric-compatible metadata back to the Quilt jar so Mod Menu can list the mod."
+    dependsOn tasks.named("remapJar")
+
+    inputs.file(layout.buildDirectory.file("resources/main/fabric.mod.json"))
+    outputs.file(tasks.named("remapJar").flatMap { it.archiveFile })
+
+    doLast {
+        ant.zip(destfile: tasks.named("remapJar").get().archiveFile.get().asFile, update: true) {
+            zipfileset(file: layout.buildDirectory.file("resources/main/fabric.mod.json").get().asFile, fullpath: "fabric.mod.json")
+        }
+    }
+}
+
+tasks.named("runClient") {
+    dependsOn tasks.named("prepareRunMods")
+    dependsOn tasks.named("copyModMenuToRunMods")
+    dependsOn tasks.named("configureModMenuForDevRun")
+    dependsOn tasks.named("hideClasspathModMetadataForPackagedRun")
+    mustRunAfter tasks.named("hideClasspathModMetadataForPackagedRun")
+}
+
+tasks.register("buildJarAndRunClient") {
+    group = "quilt"
+    description = "Builds the remapped Quilt mod jar, then launches the Minecraft client with the mod loaded."
+    dependsOn tasks.named("prepareRunMods")
+    dependsOn tasks.named("runClient")
+}
+
+tasks.named("build") {
+    dependsOn tasks.named("addFabricMetadataToRemappedJar")
+}

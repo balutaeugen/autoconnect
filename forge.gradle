@@ -1,0 +1,106 @@
+def forgeTargets = [
+        "forge-26.1.2": [
+                minecraftVersion: "26.1.2",
+                forgeVersion    : "64.0.10",
+                minecraftRange  : "[26.1,26.1.2]",
+                forgeRange      : "[62,)"
+        ],
+        "forge-26.2"  : [
+                minecraftVersion: "26.2",
+                forgeVersion    : "65.0.0",
+                minecraftRange  : "[26.2]",
+                forgeRange      : "[65,)"
+        ]
+]
+
+def forgeTarget = forgeTargets[project.name]
+if (forgeTarget == null) {
+    throw new GradleException("No Forge target configured for ${project.name}.")
+}
+
+version = rootProject.mod_version
+group = rootProject.maven_group
+base.archivesName = "${rootProject.archives_base_name}-forge"
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
+java.sourceCompatibility = JavaVersion.VERSION_25
+java.targetCompatibility = JavaVersion.VERSION_25
+
+sourceSets {
+    main {
+        java {
+            srcDir rootProject.file("src/common/java")
+            srcDir rootProject.file("src/forge/java")
+        }
+        resources {
+            srcDir rootProject.file("src/common/resources")
+            srcDir rootProject.file("src/forge/resources")
+        }
+        output.resourcesDir = layout.buildDirectory.dir("classes/java/main").get().asFile
+    }
+}
+
+minecraft {
+    mappings channel: "official", version: forgeTarget.minecraftVersion
+
+    runs {
+        configureEach {
+            workingDir.convention layout.projectDirectory.dir("run")
+            args "--mixin.config=autoconnect.client.mixins.json"
+
+            mods {
+                autoconnect {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        register("client")
+    }
+}
+
+repositories {
+    minecraft.mavenizer(it)
+    maven fg.forgeMaven
+    maven fg.minecraftLibsMaven
+    mavenCentral()
+}
+
+dependencies {
+    implementation minecraft.dependency("net.minecraftforge:forge:${forgeTarget.minecraftVersion}-${forgeTarget.forgeVersion}")
+}
+
+processResources {
+    inputs.property "version", project.version
+    inputs.property "minecraft_version_range", forgeTarget.minecraftRange
+    inputs.property "forge_version_range", forgeTarget.forgeRange
+    filteringCharset "UTF-8"
+
+    filesMatching("META-INF/mods.toml") {
+        expand "version": project.version,
+                "minecraft_version_range": forgeTarget.minecraftRange,
+                "forge_version_range": forgeTarget.forgeRange
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = "UTF-8"
+    options.release.set(25)
+    source = rootProject.fileTree("src/common/java") + rootProject.fileTree("src/forge/java")
+}
+
+tasks.named("jar", Jar) {
+    archiveVersion.set("${project.version}-${forgeTarget.minecraftVersion}")
+
+    manifest {
+        attributes["MixinConfigs"] = "autoconnect.client.mixins.json"
+    }
+
+    from(rootProject.file("LICENSE.txt")) {
+        rename { "${it}_${rootProject.archives_base_name}" }
+    }
+}
+
+tasks.withType(Test).configureEach {
+    enabled = false
+}

@@ -1,0 +1,8 @@
+plugins {
+    id 'java'
+    id 'idea'
+    id 'eclipse'
+    id 'net.neoforged.moddev' version '2.0.141'
+}
+
+apply from: rootProject.file("neoforge.gradle")
