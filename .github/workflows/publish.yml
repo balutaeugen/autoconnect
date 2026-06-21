@@ -3,10 +3,6 @@ name: Publish
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: "Mod version to build and publish, for example 26.6.1"
-        required: true
-        type: string
       release_type:
         description: "Release type used by Modrinth and CurseForge"
         required: true
@@ -39,14 +35,86 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: publish-release
+  cancel-in-progress: false
+
 jobs:
+  prepare_release:
+    name: Prepare release branch
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      release_branch: ${{ steps.version.outputs.release_branch }}
+
+    steps:
+      - name: Check out default branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Increment release version
+        id: version
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          from datetime import datetime, timezone
+          from pathlib import Path
+          import re
+
+          path = Path("gradle.properties")
+          text = path.read_text(encoding="utf-8")
+          match = re.search(r"^mod_version=(\d+)\.(\d+)\.(\d+)$", text, re.MULTILINE)
+          if not match:
+              raise SystemExit("gradle.properties must contain mod_version=YEAR.MONTH.CURRENT_BUILD")
+
+          now = datetime.now(timezone.utc)
+          year = int(str(now.year)[-2:])
+          month = now.month
+          current_year, current_month, current_build = map(int, match.groups())
+          next_build = current_build + 1 if (current_year, current_month) == (year, month) else 1
+          version = f"{year}.{month}.{next_build}"
+          release_branch = f"release/{version}"
+
+          updated = re.sub(
+              r"^mod_version=.*$",
+              f"mod_version={version}",
+              text,
+              count=1,
+              flags=re.MULTILINE,
+          )
+          path.write_text(updated, encoding="utf-8")
+
+          print(f"version={version}")
+          print(f"release_branch={release_branch}")
+          PY
+
+      - name: Commit version bump
+        run: |
+          git add gradle.properties
+          git commit -m "Bump version to ${{ steps.version.outputs.version }}"
+          git push origin HEAD:${{ github.event.repository.default_branch }}
+
+      - name: Create release branch
+        run: |
+          git switch -c "${{ steps.version.outputs.release_branch }}"
+          git push origin "${{ steps.version.outputs.release_branch }}"
+
   publish:
-    name: Build and publish ${{ inputs.version }}
+    name: Build and publish ${{ needs.prepare_release.outputs.version }}
+    needs: prepare_release
     runs-on: ubuntu-latest
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare_release.outputs.release_branch }}
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -58,23 +126,6 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "9.5.0"
-
-      - name: Apply release version
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          version = "${{ inputs.version }}"
-          path = Path("gradle.properties")
-          lines = path.read_text(encoding="utf-8").splitlines()
-          path.write_text(
-              "\n".join(
-                  f"mod_version={version}" if line.startswith("mod_version=") else line
-                  for line in lines
-              ) + "\n",
-              encoding="utf-8",
-          )
-          PY
 
       - name: Write changelog
         env:
@@ -91,13 +142,13 @@ jobs:
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          github-tag: ${{ inputs.version }}
-          github-commitish: ${{ github.sha }}
+          github-tag: ${{ needs.prepare_release.outputs.version }}
+          github-commitish: ${{ needs.prepare_release.outputs.release_branch }}
           github-draft: false
           github-prerelease: ${{ inputs.release_type != 'release' }}
           files: publish/*.jar
-          name: AutoConnect ${{ inputs.version }}
-          version: ${{ inputs.version }}
+          name: AutoConnect ${{ needs.prepare_release.outputs.version }}
+          version: ${{ needs.prepare_release.outputs.version }}
           version-type: ${{ inputs.release_type }}
           changelog-file: build/publish-changelog.md
           retry-attempts: 3
@@ -109,9 +160,9 @@ jobs:
           modrinth-id: HwkBvmkg
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
           modrinth-unfeature-mode: none
-          files: publish/autoconnect-fabric-${{ inputs.version }}-26.1-26.1.2.jar
-          name: AutoConnect ${{ inputs.version }} Fabric 26.1-26.1.2
-          version: ${{ inputs.version }}+fabric-26.1-26.1.2
+          files: publish/autoconnect-fabric-${{ needs.prepare_release.outputs.version }}-26.1-26.1.2.jar
+          name: AutoConnect ${{ needs.prepare_release.outputs.version }} Fabric 26.1-26.1.2
+          version: ${{ needs.prepare_release.outputs.version }}+fabric-26.1-26.1.2
           version-type: ${{ inputs.release_type }}
           changelog-file: build/publish-changelog.md
           loaders: fabric
@@ -130,9 +181,9 @@ jobs:
           modrinth-id: HwkBvmkg
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
           modrinth-unfeature-mode: none
-          files: publish/autoconnect-fabric-${{ inputs.version }}-26.2.jar
-          name: AutoConnect ${{ inputs.version }} Fabric 26.2
-          version: ${{ inputs.version }}+fabric-26.2
+          files: publish/autoconnect-fabric-${{ needs.prepare_release.outputs.version }}-26.2.jar
+          name: AutoConnect ${{ needs.prepare_release.outputs.version }} Fabric 26.2
+          version: ${{ needs.prepare_release.outputs.version }}+fabric-26.2
           version-type: ${{ inputs.release_type }}
           changelog-file: build/publish-changelog.md
           loaders: fabric
@@ -148,9 +199,9 @@ jobs:
           modrinth-id: HwkBvmkg
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
           modrinth-unfeature-mode: none
-          files: publish/autoconnect-forge-${{ inputs.version }}-26.1-26.1.2.jar
-          name: AutoConnect ${{ inputs.version }} Forge 26.1-26.1.2
-          version: ${{ inputs.version }}+forge-26.1-26.1.2
+          files: publish/autoconnect-forge-${{ needs.prepare_release.outputs.version }}-26.1-26.1.2.jar
+          name: AutoConnect ${{ needs.prepare_release.outputs.version }} Forge 26.1-26.1.2
+          version: ${{ needs.prepare_release.outputs.version }}+forge-26.1-26.1.2
           version-type: ${{ inputs.release_type }}
           changelog-file: build/publish-changelog.md
           loaders: forge
@@ -169,9 +220,9 @@ jobs:
           modrinth-id: HwkBvmkg
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
           modrinth-unfeature-mode: none
-          files: publish/autoconnect-forge-${{ inputs.version }}-26.2.jar
-          name: AutoConnect ${{ inputs.version }} Forge 26.2
-          version: ${{ inputs.version }}+forge-26.2
+          files: publish/autoconnect-forge-${{ needs.prepare_release.outputs.version }}-26.2.jar
+          name: AutoConnect ${{ needs.prepare_release.outputs.version }} Forge 26.2
+          version: ${{ needs.prepare_release.outputs.version }}+forge-26.2
           version-type: ${{ inputs.release_type }}
           changelog-file: build/publish-changelog.md
           loaders: forge
@@ -187,9 +238,9 @@ jobs:
           modrinth-id: HwkBvmkg
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
           modrinth-unfeature-mode: none
-          files: publish/autoconnect-neoforge-${{ inputs.version }}-26.1-26.1.2.jar
-          name: AutoConnect ${{ inputs.version }} NeoForge 26.1-26.1.2
-          version: ${{ inputs.version }}+neoforge-26.1-26.1.2
+          files: publish/autoconnect-neoforge-${{ needs.prepare_release.outputs.version }}-26.1-26.1.2.jar
+          name: AutoConnect ${{ needs.prepare_release.outputs.version }} NeoForge 26.1-26.1.2
+          version: ${{ needs.prepare_release.outputs.version }}+neoforge-26.1-26.1.2
           version-type: ${{ inputs.release_type }}
           changelog-file: build/publish-changelog.md
           loaders: neoforge
@@ -208,9 +259,9 @@ jobs:
           modrinth-id: HwkBvmkg
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
           modrinth-unfeature-mode: none
-          files: publish/autoconnect-neoforge-${{ inputs.version }}-26.2.jar
-          name: AutoConnect ${{ inputs.version }} NeoForge 26.2
-          version: ${{ inputs.version }}+neoforge-26.2
+          files: publish/autoconnect-neoforge-${{ needs.prepare_release.outputs.version }}-26.2.jar
+          name: AutoConnect ${{ needs.prepare_release.outputs.version }} NeoForge 26.2
+          version: ${{ needs.prepare_release.outputs.version }}+neoforge-26.2
           version-type: ${{ inputs.release_type }}
           changelog-file: build/publish-changelog.md
           loaders: neoforge
@@ -226,9 +277,9 @@ jobs:
           modrinth-id: HwkBvmkg
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
           modrinth-unfeature-mode: none
-          files: publish/autoconnect-quilt-${{ inputs.version }}-26.1-26.1.2.jar
-          name: AutoConnect ${{ inputs.version }} Quilt 26.1-26.1.2
-          version: ${{ inputs.version }}+quilt-26.1-26.1.2
+          files: publish/autoconnect-quilt-${{ needs.prepare_release.outputs.version }}-26.1-26.1.2.jar
+          name: AutoConnect ${{ needs.prepare_release.outputs.version }} Quilt 26.1-26.1.2
+          version: ${{ needs.prepare_release.outputs.version }}+quilt-26.1-26.1.2
           version-type: ${{ inputs.release_type }}
           changelog-file: build/publish-changelog.md
           loaders: quilt
@@ -247,9 +298,9 @@ jobs:
           modrinth-id: HwkBvmkg
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
           modrinth-unfeature-mode: none
-          files: publish/autoconnect-quilt-${{ inputs.version }}-26.2.jar
-          name: AutoConnect ${{ inputs.version }} Quilt 26.2
-          version: ${{ inputs.version }}+quilt-26.2
+          files: publish/autoconnect-quilt-${{ needs.prepare_release.outputs.version }}-26.2.jar
+          name: AutoConnect ${{ needs.prepare_release.outputs.version }} Quilt 26.2
+          version: ${{ needs.prepare_release.outputs.version }}+quilt-26.2
           version-type: ${{ inputs.release_type }}
           changelog-file: build/publish-changelog.md
           loaders: quilt
@@ -264,9 +315,9 @@ jobs:
         with:
           curseforge-id: 1580976
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
-          files: publish/autoconnect-fabric-${{ inputs.version }}-26.1-26.1.2.jar
-          name: AutoConnect ${{ inputs.version }} Fabric 26.1-26.1.2
-          version: ${{ inputs.version }}+fabric-26.1-26.1.2
+          files: publish/autoconnect-fabric-${{ needs.prepare_release.outputs.version }}-26.1-26.1.2.jar
+          name: AutoConnect ${{ needs.prepare_release.outputs.version }} Fabric 26.1-26.1.2
+          version: ${{ needs.prepare_release.outputs.version }}+fabric-26.1-26.1.2
           version-type: ${{ inputs.release_type }}
           changelog-file: build/publish-changelog.md
           loaders: fabric
@@ -284,9 +335,9 @@ jobs:
         with:
           curseforge-id: 1580976
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
-          files: publish/autoconnect-fabric-${{ inputs.version }}-26.2.jar
-          name: AutoConnect ${{ inputs.version }} Fabric 26.2
-          version: ${{ inputs.version }}+fabric-26.2
+          files: publish/autoconnect-fabric-${{ needs.prepare_release.outputs.version }}-26.2.jar
+          name: AutoConnect ${{ needs.prepare_release.outputs.version }} Fabric 26.2
+          version: ${{ needs.prepare_release.outputs.version }}+fabric-26.2
           version-type: ${{ inputs.release_type }}
           changelog-file: build/publish-changelog.md
           loaders: fabric
@@ -301,9 +352,9 @@ jobs:
         with:
           curseforge-id: 1580976
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
-          files: publish/autoconnect-forge-${{ inputs.version }}-26.1-26.1.2.jar
-          name: AutoConnect ${{ inputs.version }} Forge 26.1-26.1.2
-          version: ${{ inputs.version }}+forge-26.1-26.1.2
+          files: publish/autoconnect-forge-${{ needs.prepare_release.outputs.version }}-26.1-26.1.2.jar
+          name: AutoConnect ${{ needs.prepare_release.outputs.version }} Forge 26.1-26.1.2
+          version: ${{ needs.prepare_release.outputs.version }}+forge-26.1-26.1.2
           version-type: ${{ inputs.release_type }}
           changelog-file: build/publish-changelog.md
           loaders: forge
@@ -321,9 +372,9 @@ jobs:
         with:
           curseforge-id: 1580976
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
-          files: publish/autoconnect-forge-${{ inputs.version }}-26.2.jar
-          name: AutoConnect ${{ inputs.version }} Forge 26.2
-          version: ${{ inputs.version }}+forge-26.2
+          files: publish/autoconnect-forge-${{ needs.prepare_release.outputs.version }}-26.2.jar
+          name: AutoConnect ${{ needs.prepare_release.outputs.version }} Forge 26.2
+          version: ${{ needs.prepare_release.outputs.version }}+forge-26.2
           version-type: ${{ inputs.release_type }}
           changelog-file: build/publish-changelog.md
           loaders: forge
@@ -338,9 +389,9 @@ jobs:
         with:
           curseforge-id: 1580976
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
-          files: publish/autoconnect-neoforge-${{ inputs.version }}-26.1-26.1.2.jar
-          name: AutoConnect ${{ inputs.version }} NeoForge 26.1-26.1.2
-          version: ${{ inputs.version }}+neoforge-26.1-26.1.2
+          files: publish/autoconnect-neoforge-${{ needs.prepare_release.outputs.version }}-26.1-26.1.2.jar
+          name: AutoConnect ${{ needs.prepare_release.outputs.version }} NeoForge 26.1-26.1.2
+          version: ${{ needs.prepare_release.outputs.version }}+neoforge-26.1-26.1.2
           version-type: ${{ inputs.release_type }}
           changelog-file: build/publish-changelog.md
           loaders: neoforge
@@ -358,9 +409,9 @@ jobs:
         with:
           curseforge-id: 1580976
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
-          files: publish/autoconnect-neoforge-${{ inputs.version }}-26.2.jar
-          name: AutoConnect ${{ inputs.version }} NeoForge 26.2
-          version: ${{ inputs.version }}+neoforge-26.2
+          files: publish/autoconnect-neoforge-${{ needs.prepare_release.outputs.version }}-26.2.jar
+          name: AutoConnect ${{ needs.prepare_release.outputs.version }} NeoForge 26.2
+          version: ${{ needs.prepare_release.outputs.version }}+neoforge-26.2
           version-type: ${{ inputs.release_type }}
           changelog-file: build/publish-changelog.md
           loaders: neoforge
@@ -375,9 +426,9 @@ jobs:
         with:
           curseforge-id: 1580976
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
-          files: publish/autoconnect-quilt-${{ inputs.version }}-26.1-26.1.2.jar
-          name: AutoConnect ${{ inputs.version }} Quilt 26.1-26.1.2
-          version: ${{ inputs.version }}+quilt-26.1-26.1.2
+          files: publish/autoconnect-quilt-${{ needs.prepare_release.outputs.version }}-26.1-26.1.2.jar
+          name: AutoConnect ${{ needs.prepare_release.outputs.version }} Quilt 26.1-26.1.2
+          version: ${{ needs.prepare_release.outputs.version }}+quilt-26.1-26.1.2
           version-type: ${{ inputs.release_type }}
           changelog-file: build/publish-changelog.md
           loaders: quilt
@@ -395,9 +446,9 @@ jobs:
         with:
           curseforge-id: 1580976
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
-          files: publish/autoconnect-quilt-${{ inputs.version }}-26.2.jar
-          name: AutoConnect ${{ inputs.version }} Quilt 26.2
-          version: ${{ inputs.version }}+quilt-26.2
+          files: publish/autoconnect-quilt-${{ needs.prepare_release.outputs.version }}-26.2.jar
+          name: AutoConnect ${{ needs.prepare_release.outputs.version }} Quilt 26.2
+          version: ${{ needs.prepare_release.outputs.version }}+quilt-26.2
           version-type: ${{ inputs.release_type }}
           changelog-file: build/publish-changelog.md
           loaders: quilt
