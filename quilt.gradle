@@ -110,17 +110,18 @@ dependencies {
 }
 
 processResources {
-    inputs.property "version", project.version
-    inputs.property "minecraft_version", quiltTarget.minecraftRange
-    inputs.property "fabric_loader_dependency", fabricLoaderDependency
-    inputs.property "modmenu_dependency", quiltTarget.modMenuDependency
-    filteringCharset "UTF-8"
+    def resourceProperties = [
+            "version"                 : project.version,
+            "minecraft_version"       : quiltTarget.minecraftRange,
+            "fabric_loader_dependency": fabricLoaderDependency,
+            "modmenu_dependency"      : quiltTarget.modMenuDependency
+    ]
+
+    inputs.properties(resourceProperties)
+    filteringCharset = "UTF-8"
 
     filesMatching("fabric.mod.json") {
-        expand "version": project.version,
-                "minecraft_version": quiltTarget.minecraftRange,
-                "fabric_loader_dependency": fabricLoaderDependency,
-                "modmenu_dependency": quiltTarget.modMenuDependency
+        expand resourceProperties
     }
 }
 
@@ -197,7 +198,7 @@ java {
 jar {
     archiveVersion.set("${project.version}-${quiltTarget.minecraftVersion}")
 
-    from(rootProject.file("LICENSE.txt")) {
+    from(rootProject.file("LICENSE")) {
         rename { "${it}_${rootProject.archives_base_name}" }
     }
 }

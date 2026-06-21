@@ -27,8 +27,6 @@ public class AutoConnectConfigScreen extends Screen {
     private static final int FOOTER_MARGIN = 12;
     private static final int BUTTON_HEIGHT = 20;
     private static final int SPACING = 6;
-    private static final int MAX_RETRY_COUNT = 99;
-    private static final int MAX_RETRY_DELAY_SECONDS = 300;
 
     private final Screen parent;
     private final AutoConnectConfig config = AutoConnectConfig.get();
@@ -36,8 +34,6 @@ public class AutoConnectConfigScreen extends Screen {
     private EditBox serverAddress;
     private EditBox retryCount;
     private EditBox retryDelaySeconds;
-    private Button enabledButton;
-    private Button retryButton;
 
     public AutoConnectConfigScreen(Screen parent) {
         super(Component.literal("AutoConnect"));
@@ -56,12 +52,12 @@ public class AutoConnectConfigScreen extends Screen {
 
         LinearLayout settings = LinearLayout.vertical().spacing(SPACING);
         settings.addChild(description("Controls when AutoConnect joins a server and how failed joins are retried."));
-        enabledButton = Button.builder(enabledLabel(), button -> {
+        Button enabledButton = Button.builder(enabledLabel(), button -> {
             config.enabled = !config.enabled;
             button.setMessage(enabledLabel());
         }).width(contentWidth).build();
         settings.addChild(enabledButton);
-        settings.addChild(descriptionSpacer("When enabled, opening Multiplayer starts one automatic connection attempt."));
+        settings.addChild(description("When enabled, opening Multiplayer starts one automatic connection attempt."));
 
         settings.addChild(label("Server Address"));
         serverAddress = new EditBox(font, contentWidth, BUTTON_HEIGHT, Component.literal("Server Address"));
@@ -70,24 +66,24 @@ public class AutoConnectConfigScreen extends Screen {
         settings.addChild(description(lastServerDescription()));
         settings.addChild(spacer(4));
 
-        retryButton = Button.builder(retryLabel(), button -> {
+        Button retryButton = Button.builder(retryLabel(), button -> {
             config.retryOnFailure = !config.retryOnFailure;
             button.setMessage(retryLabel());
         }).width(contentWidth).build();
         settings.addChild(retryButton);
-        settings.addChild(descriptionSpacer("When enabled, AutoConnect retries automatically from the disconnect screen."));
+        settings.addChild(description("When enabled, AutoConnect retries automatically from the disconnect screen."));
 
         settings.addChild(label("Retries Count"));
         retryCount = new EditBox(font, contentWidth, BUTTON_HEIGHT, Component.literal("Retries Count"));
         retryCount.setValue(Integer.toString(config.retryCount));
         settings.addChild(retryCount);
-        settings.addChild(descriptionSpacer("Additional attempts after the first failed connection."));
+        settings.addChild(description("Additional attempts after the first failed connection."));
 
         settings.addChild(label("Automatic Retry Timeout (in seconds)"));
         retryDelaySeconds = new EditBox(font, contentWidth, BUTTON_HEIGHT, Component.literal("Automatic Retry Timeout"));
         retryDelaySeconds.setValue(Integer.toString(config.retryDelaySeconds));
         settings.addChild(retryDelaySeconds);
-        settings.addChild(descriptionSpacer("0 retries as soon as the disconnect screen opens."));
+        settings.addChild(description("0 means retry as soon as the disconnect screen opens."));
 
         settings.setX(contentX);
         settings.setY(scrollY);
@@ -134,8 +130,8 @@ public class AutoConnectConfigScreen extends Screen {
 
     private void saveConfig() {
         config.serverAddress = serverAddress.getValue().trim();
-        config.retryCount = parseClampedInt(retryCount.getValue(), 0, MAX_RETRY_COUNT);
-        config.retryDelaySeconds = parseClampedInt(retryDelaySeconds.getValue(), 0, MAX_RETRY_DELAY_SECONDS);
+        config.retryCount = parseClampedInt(retryCount.getValue(), 0, AutoConnectConfig.MAX_RETRY_COUNT);
+        config.retryDelaySeconds = parseClampedInt(retryDelaySeconds.getValue(), 0, AutoConnectConfig.MAX_RETRY_DELAY_SECONDS);
         config.save();
     }
 
@@ -159,10 +155,6 @@ public class AutoConnectConfigScreen extends Screen {
 
     private WrappedTextWidget description(String text) {
         return new WrappedTextWidget(0, 0, contentWidth(), textHeight(text, contentWidth()), Component.literal(text), false);
-    }
-
-    private AbstractWidget descriptionSpacer(String text) {
-        return spacer(textHeight(text, contentWidth()));
     }
 
     private AbstractWidget spacer(int height) {

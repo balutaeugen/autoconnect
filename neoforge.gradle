@@ -61,15 +61,17 @@ neoForge {
 }
 
 processResources {
-    inputs.property "version", project.version
-    inputs.property "minecraft_version_range", neoForgeTarget.minecraftRange
-    inputs.property "neoforge_version_range", neoForgeTarget.neoForgeRange
-    filteringCharset "UTF-8"
+    def resourceProperties = [
+            "version"                : project.version,
+            "minecraft_version_range": neoForgeTarget.minecraftRange,
+            "neoforge_version_range" : neoForgeTarget.neoForgeRange
+    ]
+
+    inputs.properties(resourceProperties)
+    filteringCharset = "UTF-8"
 
     filesMatching("META-INF/neoforge.mods.toml") {
-        expand "version": project.version,
-                "minecraft_version_range": neoForgeTarget.minecraftRange,
-                "neoforge_version_range": neoForgeTarget.neoForgeRange
+        expand resourceProperties
     }
 }
 
@@ -86,7 +88,7 @@ tasks.named("jar", Jar) {
         attributes["MixinConfigs"] = "autoconnect.client.mixins.json"
     }
 
-    from(rootProject.file("LICENSE.txt")) {
+    from(rootProject.file("LICENSE")) {
         rename { "${it}_${rootProject.archives_base_name}" }
     }
 }

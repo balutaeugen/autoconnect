@@ -172,19 +172,19 @@ tasks.named("runClient") {
 }
 
 processResources {
-    inputs.property "version", project.version
-    inputs.property "minecraft_version", minecraftConfig.minecraftDependency
-    inputs.property "loader_version", project.loader_version
-    inputs.property "modmenu_dependency", minecraftConfig.modMenuDependency
-    inputs.property "cloth_config_dependency", minecraftConfig.clothConfigDependency
-    filteringCharset "UTF-8"
+    def resourceProperties = [
+            "version"                : project.version,
+            "minecraft_version"      : minecraftConfig.minecraftDependency,
+            "loader_version"         : project.loader_version,
+            "modmenu_dependency"     : minecraftConfig.modMenuDependency,
+            "cloth_config_dependency": minecraftConfig.clothConfigDependency
+    ]
+
+    inputs.properties(resourceProperties)
+    filteringCharset = "UTF-8"
 
     filesMatching("fabric.mod.json") {
-        expand "version": project.version,
-                "minecraft_version": minecraftConfig.minecraftDependency,
-                "loader_version": project.loader_version,
-                "modmenu_dependency": minecraftConfig.modMenuDependency,
-                "cloth_config_dependency": minecraftConfig.clothConfigDependency
+        expand resourceProperties
     }
 }
 
@@ -202,7 +202,7 @@ java {
 jar {
     archiveVersion.set("${project.version}-${minecraftVersion}")
 
-    from(rootProject.file("LICENSE.txt")) {
+    from(rootProject.file("LICENSE")) {
         rename { "${it}_${project.archives_base_name}" }
     }
 }

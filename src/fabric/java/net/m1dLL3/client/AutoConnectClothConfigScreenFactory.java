@@ -7,9 +7,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
 public final class AutoConnectClothConfigScreenFactory {
-    private static final int MAX_RETRY_COUNT = 99;
-    private static final int MAX_RETRY_DELAY_SECONDS = 300;
-
     private final AutoConnectConfig config = AutoConnectConfig.get();
 
     public Screen getConfigScreen(Screen parent) {
@@ -53,7 +50,7 @@ public final class AutoConnectClothConfigScreenFactory {
         category.addEntry(entries.startIntField(Component.literal("Retries Count"), config.retryCount)
                 .setDefaultValue(0)
                 .setMin(0)
-                .setMax(MAX_RETRY_COUNT)
+                .setMax(AutoConnectConfig.MAX_RETRY_COUNT)
                 .setRequirement(retryOnFailure::getValue)
                 .setTooltip(
                         Component.literal("Additional attempts after the first failed connection."),
@@ -64,7 +61,7 @@ public final class AutoConnectClothConfigScreenFactory {
         category.addEntry(entries.startIntField(Component.literal("Automatic Retry Timeout (in seconds)"), config.retryDelaySeconds)
                 .setDefaultValue(0)
                 .setMin(0)
-                .setMax(MAX_RETRY_DELAY_SECONDS)
+                .setMax(AutoConnectConfig.MAX_RETRY_DELAY_SECONDS)
                 .setRequirement(retryOnFailure::getValue)
                 .setTooltip(
                         Component.literal("Seconds to wait before an automatic retry on the disconnect screen."),
