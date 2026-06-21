@@ -10,17 +10,25 @@ import net.minecraft.network.chat.Component;
 public final class AutoConnectState {
     private static int attempts;
     private static long retryAtMillis = -1L;
+    private static boolean connectionAttemptInProgress;
+    private static boolean connectedSuccessfully;
 
     private AutoConnectState() {
     }
 
     public static void resetAttempts() {
         attempts = 0;
+        connectionAttemptInProgress = false;
+        connectedSuccessfully = false;
         cancelAutomaticRetry();
     }
 
     public static boolean tryConnect(JoinMultiplayerScreen screen) {
         cancelAutomaticRetry();
+
+        if (connectedSuccessfully) {
+            return false;
+        }
 
         AutoConnectConfig config = AutoConnectConfig.get();
         if (!canRetry(config)) {
@@ -43,14 +51,34 @@ public final class AutoConnectState {
         return true;
     }
 
+    public static void beginConnectionAttempt() {
+        connectionAttemptInProgress = true;
+        connectedSuccessfully = false;
+    }
+
     private static void connect(JoinMultiplayerScreen screen, AutoConnectConfig config) {
         String configuredAddress = config.connectAddress();
         Minecraft minecraft = Minecraft.getInstance();
         ServerData target = new ServerData("AutoConnect", configuredAddress, ServerData.Type.OTHER);
         ServerAddress address = ServerAddress.parseString(target.ip);
         attempts++;
+        beginConnectionAttempt();
         config.rememberServer(target.ip);
         ConnectScreen.startConnecting(screen, minecraft, address, target, false, null);
+    }
+
+    public static void markConnectedSuccessfullyIfAttempting() {
+        if (!connectionAttemptInProgress) {
+            return;
+        }
+
+        connectionAttemptInProgress = false;
+        connectedSuccessfully = true;
+        cancelAutomaticRetry();
+    }
+
+    public static void markConnectionAttemptFailed() {
+        connectionAttemptInProgress = false;
     }
 
     public static void prepareDisconnectedRetry() {
@@ -73,7 +101,7 @@ public final class AutoConnectState {
         }
 
         if (millisUntilRetry() <= 0L) {
-            tryConnect(screen);
+            retryDisconnected(screen);
         }
     }
 
@@ -92,7 +120,7 @@ public final class AutoConnectState {
 
     public static boolean shouldShowDisconnectedRetryStatus() {
         AutoConnectConfig config = AutoConnectConfig.get();
-        return config.retryOnFailure && canRetry(config);
+        return !connectedSuccessfully && config.retryOnFailure && canRetry(config);
     }
 
     private static boolean canRetry(AutoConnectConfig config) {
@@ -109,6 +137,18 @@ public final class AutoConnectState {
 
     private static boolean canUseAutoConnect(AutoConnectConfig config) {
         return config.enabled && !config.connectAddress().isBlank();
+    }
+
+    private static boolean retryDisconnected(JoinMultiplayerScreen screen) {
+        cancelAutomaticRetry();
+
+        AutoConnectConfig config = AutoConnectConfig.get();
+        if (!canRetry(config)) {
+            return false;
+        }
+
+        connect(screen, config);
+        return true;
     }
 
     private static long millisUntilRetry() {

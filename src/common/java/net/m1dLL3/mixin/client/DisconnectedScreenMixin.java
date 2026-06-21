@@ -35,6 +35,13 @@ public abstract class DisconnectedScreenMixin extends Screen {
         super(title);
     }
 
+    @Inject(method = "init", at = @At("HEAD"))
+    private void markConnectionAttemptFailed(CallbackInfo ci) {
+        if (parent instanceof JoinMultiplayerScreen) {
+            AutoConnectState.markConnectionAttemptFailed();
+        }
+    }
+
     @Inject(
             method = "init",
             at = @At(
@@ -45,7 +52,8 @@ public abstract class DisconnectedScreenMixin extends Screen {
             )
     )
     private void addRetryStatusBelowTitle(CallbackInfo ci) {
-        if (parent instanceof JoinMultiplayerScreen multiplayerScreen && AutoConnectState.shouldShowDisconnectedRetryStatus()) {
+        if (parent instanceof JoinMultiplayerScreen multiplayerScreen
+                && AutoConnectState.shouldShowDisconnectedRetryStatus()) {
             AutoConnectState.prepareDisconnectedRetry();
             AutoConnectRetryWidget retryMessage = new AutoConnectRetryWidget(
                     AutoConnectState.disconnectedRetryMessage(),
