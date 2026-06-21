@@ -1,0 +1,54 @@
+{
+  "modrinth_project_id": "HwkBvmkg",
+  "curseforge_project_id": "1580976",
+  "java_version": "25",
+  "environment": "client",
+  "loaders": {
+    "fabric": "Fabric",
+    "forge": "Forge",
+    "neoforge": "NeoForge",
+    "quilt": "Quilt"
+  },
+  "targets": [
+    {
+      "loader": "fabric",
+      "minecraft_label": "26.1-26.1.2",
+      "minecraft_versions": ["26.1", "26.1.1", "26.1.2"]
+    },
+    {
+      "loader": "fabric",
+      "minecraft_label": "26.2",
+      "minecraft_versions": ["26.2"]
+    },
+    {
+      "loader": "forge",
+      "minecraft_label": "26.1-26.1.2",
+      "minecraft_versions": ["26.1", "26.1.1", "26.1.2"]
+    },
+    {
+      "loader": "forge",
+      "minecraft_label": "26.2",
+      "minecraft_versions": ["26.2"]
+    },
+    {
+      "loader": "neoforge",
+      "minecraft_label": "26.1-26.1.2",
+      "minecraft_versions": ["26.1", "26.1.1", "26.1.2"]
+    },
+    {
+      "loader": "neoforge",
+      "minecraft_label": "26.2",
+      "minecraft_versions": ["26.2"]
+    },
+    {
+      "loader": "quilt",
+      "minecraft_label": "26.1-26.1.2",
+      "minecraft_versions": ["26.1", "26.1.1", "26.1.2"]
+    },
+    {
+      "loader": "quilt",
+      "minecraft_label": "26.2",
+      "minecraft_versions": ["26.2"]
+    }
+  ]
+}
