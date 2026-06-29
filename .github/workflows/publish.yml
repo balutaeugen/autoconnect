@@ -121,47 +121,21 @@ jobs:
         with:
           gradle-version: "9.5.0"
 
-      - name: Generate changelog
+      - name: Prepare changelog
         env:
           VERSION: ${{ needs.prepare_release.outputs.version }}
         run: |
           python - <<'PY'
           from pathlib import Path
           import os
-          import subprocess
 
           version = os.environ["VERSION"]
-
-          def git(*args):
-              return subprocess.check_output(("git", *args), text=True).strip()
-
-          tags = [
-              tag for tag in git("tag", "--list", "[0-9]*.[0-9]*.[0-9]*", "--sort=-version:refname").splitlines()
-              if tag != version
-          ]
-          previous_tag = tags[0] if tags else ""
-          revision_range = f"{previous_tag}..HEAD" if previous_tag else "HEAD"
-
-          log_format = "%s"
-          subjects = git("log", revision_range, f"--pretty=format:{log_format}", "--no-merges").splitlines()
-          subjects = [
-              subject for subject in subjects
-              if subject and subject != f"Bump version to {version}"
-          ]
-
-          lines = [f"AutoConnect {version}"]
-          if previous_tag:
-              lines.append(f"Changes since {previous_tag}:")
-          else:
-              lines.append("Changes:")
-
-          if subjects:
-              lines.extend(f"- {subject}" for subject in subjects)
-          else:
-              lines.append("- Maintenance release.")
+          changelog = Path(".changelog") / f"changelog-{version}.md"
+          if not changelog.is_file():
+              raise SystemExit(f"Missing changelog file for {version}: {changelog}")
 
           Path("build").mkdir(exist_ok=True)
-          Path("build/publish-changelog.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+          Path("build/publish-changelog.md").write_text(changelog.read_text(encoding="utf-8"), encoding="utf-8")
           PY
 
       - name: Build publish artifacts
