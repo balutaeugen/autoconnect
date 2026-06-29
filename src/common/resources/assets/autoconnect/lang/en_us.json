@@ -1,5 +1,7 @@
 {
+  "button.autoconnect.clear_saved_server": "Clear saved server",
   "button.autoconnect.reconnect": "Reconnect",
+  "button.autoconnect.use_last_server": "Use last connected server",
   "category.autoconnect.connection": "Connection",
   "option.autoconnect.enabled": "Enabled",
   "option.autoconnect.enabled.value": "Enabled: %s",
@@ -24,7 +26,7 @@
   "text.autoconnect.retry_on_failure.tooltip": "Controls whether AutoConnect should try again after a failed connection.",
   "text.autoconnect.reconnect_countdown": "AutoConnect will reconnect in %ss.",
   "text.autoconnect.reconnecting": "AutoConnect is reconnecting...",
-  "text.autoconnect.server_address.blank": "Leave blank to skip auto-connect until a server is configured.",
+  "text.autoconnect.server_address.blank": "Leave blank to use the last connected server when one is remembered.",
   "text.autoconnect.server_address.invalid": "AutoConnect skipped invalid server address: %s",
   "text.autoconnect.server_address.tooltip": "Server address to join automatically.",
   "title.autoconnect.config": "AutoConnect"

@@ -11,6 +11,7 @@ AutoConnect only changes the client-side connection flow. It does not bypass aut
 - Automatically connects after you open the Multiplayer screen
 - Saves the last server you joined manually
 - Lets you manually edit the saved server address
+- Can use or clear the last connected server from the config screen
 - Optional retry-on-failure behavior
 - Configurable retry count and retry delay
 - Adds a Reconnect button to failed connection screens
@@ -22,7 +23,7 @@ AutoConnect only changes the client-side connection flow. It does not bypass aut
 | Setting | Description | Default |
 | --- | --- | --- |
 | Enabled | Turns AutoConnect on or off. When enabled, opening Multiplayer starts one automatic connection attempt if a server is configured. | `true` |
-| Server Address | The server AutoConnect should join. Joining a server manually updates this value. | Empty |
+| Server Address | The server AutoConnect should join. If this is empty, AutoConnect can use the last connected server when one has been remembered. | Empty |
 | Retry on Failure | Allows AutoConnect to retry after a failed connection. | `false` |
 | Retry Count | Number of retry attempts after the first failed connection. | `0` |
 | Automatic Retry Timeout (in seconds) | Delay before an automatic retry. `0` retries immediately. | `3` |
@@ -148,6 +149,8 @@ Player-facing platform descriptions live in:
 
 GitHub Actions includes a manual `Publish` workflow. It builds the release jars, writes the provided changelog, and can publish to Modrinth, CurseForge, and GitHub Releases.
 
+The `Publish Dry Run` workflow builds the publish artifacts and validates Modrinth and CurseForge metadata without uploading.
+
 Required repository secrets:
 
 - `MODRINTH_TOKEN`
@@ -157,6 +160,8 @@ The current publishing targets are:
 
 - Modrinth project `HwkBvmkg`
 - CurseForge project `1580976`
+
+Developer notes for extending the loader/version matrix live in `docs/adding-minecraft-version.md`.
 
 ## Ignored Files
 

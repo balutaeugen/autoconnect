@@ -8,6 +8,8 @@ run/
 quilt/*/.gradle/
 publish/
 **/publish/
+!.github/actions/publish/
+!.github/actions/publish/**
 /net/
 net/
 !src/**/net/

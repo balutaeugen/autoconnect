@@ -18,6 +18,7 @@ public final class AutoConnectState {
     private static long retryAtMillis = -1L;
     private static boolean connectionAttemptInProgress;
     private static boolean connectedSuccessfully;
+    private static boolean automaticRetryAllowedForActiveAttempt = true;
     private static AutoConnectRetryCounters.AttemptCounter activeAttemptCounter = RETRY_COUNTERS.autoConnect();
 
     private AutoConnectState() {
@@ -28,6 +29,7 @@ public final class AutoConnectState {
         activeAttemptCounter = RETRY_COUNTERS.autoConnect();
         connectionAttemptInProgress = false;
         connectedSuccessfully = false;
+        automaticRetryAllowedForActiveAttempt = true;
         cancelAutomaticRetry();
     }
 
@@ -44,7 +46,7 @@ public final class AutoConnectState {
             return false;
         }
 
-        return connect(screen, config, attemptCounter);
+        return connect(screen, config, attemptCounter, true);
     }
 
     public static boolean reconnectManually(JoinMultiplayerScreen screen) {
@@ -56,20 +58,27 @@ public final class AutoConnectState {
         }
 
         RETRY_COUNTERS.reconnect().reset();
-        return connect(screen, config, RETRY_COUNTERS.reconnect());
+        return connect(screen, config, RETRY_COUNTERS.reconnect(), false);
     }
 
     public static void beginManualConnectionAttempt() {
-        beginConnectionAttempt(RETRY_COUNTERS.manualJoin());
+        beginConnectionAttempt(RETRY_COUNTERS.manualJoin(), false);
     }
 
-    private static void beginConnectionAttempt(AutoConnectRetryCounters.AttemptCounter attemptCounter) {
+    private static void beginConnectionAttempt(
+            AutoConnectRetryCounters.AttemptCounter attemptCounter,
+            boolean automaticRetryAllowed) {
         activeAttemptCounter = attemptCounter;
         connectionAttemptInProgress = true;
         connectedSuccessfully = false;
+        automaticRetryAllowedForActiveAttempt = automaticRetryAllowed;
     }
 
-    private static boolean connect(JoinMultiplayerScreen screen, AutoConnectConfig config, AutoConnectRetryCounters.AttemptCounter attemptCounter) {
+    private static boolean connect(
+            JoinMultiplayerScreen screen,
+            AutoConnectConfig config,
+            AutoConnectRetryCounters.AttemptCounter attemptCounter,
+            boolean automaticRetryAllowed) {
         String configuredAddress = config.connectAddress();
         if (!AutoConnectServerAddress.isUsable(configuredAddress)) {
             showInvalidAddressFeedback(configuredAddress);
@@ -80,7 +89,7 @@ public final class AutoConnectState {
         ServerData target = new ServerData("AutoConnect", configuredAddress, ServerData.Type.OTHER);
         ServerAddress address = ServerAddress.parseString(target.ip);
         attemptCounter.recordAttempt();
-        beginConnectionAttempt(attemptCounter);
+        beginConnectionAttempt(attemptCounter, automaticRetryAllowed);
         config.rememberServer(target.ip);
         ConnectScreen.startConnecting(screen, minecraft, address, target, false, null);
         return true;
@@ -101,6 +110,11 @@ public final class AutoConnectState {
     }
 
     public static void prepareDisconnectedRetry() {
+        if (!automaticRetryAllowedForActiveAttempt) {
+            cancelAutomaticRetry();
+            return;
+        }
+
         AutoConnectConfig config = AutoConnectConfig.get();
         if (!canRetry(config, activeAttemptCounter)) {
             cancelAutomaticRetry();
@@ -143,7 +157,10 @@ public final class AutoConnectState {
 
     public static boolean shouldShowDisconnectedRetryStatus() {
         AutoConnectConfig config = AutoConnectConfig.get();
-        return !connectedSuccessfully && config.retryOnFailure && canRetry(config, activeAttemptCounter);
+        return !connectedSuccessfully
+                && automaticRetryAllowedForActiveAttempt
+                && config.retryOnFailure
+                && canRetry(config, activeAttemptCounter);
     }
 
     private static boolean canRetry(AutoConnectConfig config, AutoConnectRetryCounters.AttemptCounter attemptCounter) {
@@ -170,7 +187,7 @@ public final class AutoConnectState {
             return false;
         }
 
-        return connect(screen, config, activeAttemptCounter);
+        return connect(screen, config, activeAttemptCounter, true);
     }
 
     private static long millisUntilRetry() {

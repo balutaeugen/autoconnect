@@ -1,9 +1,11 @@
 package net.m1dLL3.client;
 
 abstract class AutoConnectConfigBase {
+    public static final int CURRENT_CONFIG_VERSION = 1;
     public static final int MAX_RETRY_COUNT = 99;
     public static final int MAX_RETRY_DELAY_SECONDS = 300;
 
+    public int configVersion = CURRENT_CONFIG_VERSION;
     public boolean enabled = true;
     public String serverAddress = "";
     public String lastServerAddress = "";
@@ -42,12 +44,44 @@ abstract class AutoConnectConfigBase {
         save();
     }
 
+    public boolean hasLastServerAddress() {
+        return AutoConnectServerAddress.isUsable(lastServerAddress);
+    }
+
+    public void clearLastServerAddress() {
+        if (lastServerAddress == null || lastServerAddress.isBlank()) {
+            lastServerAddress = "";
+            return;
+        }
+
+        lastServerAddress = "";
+        save();
+    }
+
+    public void useLastServerForAutoConnect() {
+        if (!hasLastServerAddress()) {
+            return;
+        }
+
+        useServerForAutoConnect(lastServerAddress);
+    }
+
     public String connectAddress() {
-        return AutoConnectServerAddress.normalize(serverAddress);
+        String configuredAddress = AutoConnectServerAddress.normalize(serverAddress);
+        if (!configuredAddress.isBlank()) {
+            return configuredAddress;
+        }
+
+        return hasLastServerAddress() ? AutoConnectServerAddress.normalize(lastServerAddress) : "";
     }
 
     boolean sanitize() {
         boolean changed = false;
+        if (configVersion != CURRENT_CONFIG_VERSION) {
+            configVersion = CURRENT_CONFIG_VERSION;
+            changed = true;
+        }
+
         if (serverAddress == null) {
             serverAddress = "";
             changed = true;

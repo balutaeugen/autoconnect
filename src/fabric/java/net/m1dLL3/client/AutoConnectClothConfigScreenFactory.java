@@ -29,7 +29,7 @@ public final class AutoConnectClothConfigScreenFactory {
                 .setSaveConsumer(value -> config.enabled = value)
                 .build());
 
-        category.addEntry(entries.startStrField(Component.translatable("option.autoconnect.server_address"), config.connectAddress())
+        category.addEntry(entries.startStrField(Component.translatable("option.autoconnect.server_address"), config.serverAddress == null ? "" : config.serverAddress)
                 .setDefaultValue("")
                 .setTooltip(
                         Component.translatable("text.autoconnect.server_address.tooltip"),
