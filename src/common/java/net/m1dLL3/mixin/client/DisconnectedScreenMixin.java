@@ -13,6 +13,7 @@ import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
@@ -30,6 +31,9 @@ public abstract class DisconnectedScreenMixin extends Screen {
     @Shadow
     @Final
     private LinearLayout layout;
+
+    @Unique
+    private AutoConnectRetryWidget autoConnect$retryMessage;
 
     private DisconnectedScreenMixin(Component title) {
         super(title);
@@ -57,11 +61,21 @@ public abstract class DisconnectedScreenMixin extends Screen {
             AutoConnectState.prepareDisconnectedRetry();
             AutoConnectRetryWidget retryMessage = new AutoConnectRetryWidget(
                     AutoConnectState.disconnectedRetryMessage(),
-                    font,
-                    multiplayerScreen);
+                    font);
             retryMessage.setMaxWidth(width - 50);
+            autoConnect$retryMessage = retryMessage;
             layout.addChild(retryMessage);
             layout.addChild(SpacerElement.height(RETRY_STATUS_SPACER_HEIGHT));
+        }
+    }
+
+    @Inject(method = "tick", at = @At("HEAD"), require = 0)
+    private void tickAutoConnectRetry(CallbackInfo ci) {
+        if (parent instanceof JoinMultiplayerScreen multiplayerScreen) {
+            AutoConnectState.tickDisconnectedRetry(multiplayerScreen);
+            if (autoConnect$retryMessage != null) {
+                autoConnect$retryMessage.refresh();
+            }
         }
     }
 

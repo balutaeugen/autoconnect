@@ -14,11 +14,11 @@ abstract class AutoConnectConfigBase {
     public abstract void save();
 
     public void rememberServer(String address) {
-        if (address == null || address.isBlank()) {
+        if (!AutoConnectServerAddress.isUsable(address)) {
             return;
         }
 
-        String trimmedAddress = address.trim();
+        String trimmedAddress = AutoConnectServerAddress.normalize(address);
         if (trimmedAddress.equals(lastServerAddress)) {
             return;
         }
@@ -28,11 +28,11 @@ abstract class AutoConnectConfigBase {
     }
 
     public void useServerForAutoConnect(String address) {
-        if (address == null || address.isBlank()) {
+        if (!AutoConnectServerAddress.isUsable(address)) {
             return;
         }
 
-        String trimmedAddress = address.trim();
+        String trimmedAddress = AutoConnectServerAddress.normalize(address);
         if (trimmedAddress.equals(serverAddress) && trimmedAddress.equals(lastServerAddress)) {
             return;
         }
@@ -43,7 +43,7 @@ abstract class AutoConnectConfigBase {
     }
 
     public String connectAddress() {
-        return serverAddress == null ? "" : serverAddress.trim();
+        return AutoConnectServerAddress.normalize(serverAddress);
     }
 
     boolean sanitize() {
@@ -51,10 +51,22 @@ abstract class AutoConnectConfigBase {
         if (serverAddress == null) {
             serverAddress = "";
             changed = true;
+        } else {
+            String sanitizedServerAddress = AutoConnectServerAddress.normalize(serverAddress);
+            if (!serverAddress.equals(sanitizedServerAddress)) {
+                serverAddress = sanitizedServerAddress;
+                changed = true;
+            }
         }
         if (lastServerAddress == null) {
             lastServerAddress = "";
             changed = true;
+        } else {
+            String sanitizedLastServerAddress = AutoConnectServerAddress.normalize(lastServerAddress);
+            if (!lastServerAddress.equals(sanitizedLastServerAddress)) {
+                lastServerAddress = sanitizedLastServerAddress;
+                changed = true;
+            }
         }
 
         int sanitizedRetryCount = Math.max(0, Math.min(MAX_RETRY_COUNT, retryCount));

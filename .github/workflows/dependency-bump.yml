@@ -70,7 +70,7 @@ jobs:
 
       - name: Update dependencies
         if: steps.existing-pr.outputs.exists != 'true'
-        run: python scripts/update_dependencies.py --skip-gradle-check
+        run: python .github/actions/dependency-bump/update_dependencies.py --skip-gradle-check
 
       - name: Detect changes
         if: steps.existing-pr.outputs.exists != 'true'
@@ -111,6 +111,7 @@ jobs:
             quilt/quilt.gradle \
             quilt/26.1.2/build.gradle \
             quilt/26.2/build.gradle \
+            .github/actions/dependency-bump/update_dependencies.py \
             README.md
           git commit -m "chore: bump dependency versions"
           git push --force-with-lease origin "$BUMP_BRANCH"

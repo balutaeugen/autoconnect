@@ -9,9 +9,13 @@ import java.io.Reader;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 final class AutoConnectConfigFile {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Logger LOGGER = Logger.getLogger("AutoConnect");
 
     private AutoConnectConfigFile() {
     }
@@ -20,10 +24,17 @@ final class AutoConnectConfigFile {
         T config = null;
         boolean shouldSave = !Files.exists(path);
 
+        boolean loadedBrokenConfig = false;
         if (!shouldSave) {
             try (Reader reader = Files.newBufferedReader(path)) {
                 config = GSON.fromJson(reader, configClass);
-            } catch (IOException | JsonParseException | IllegalStateException exception) {
+            } catch (IOException exception) {
+                LOGGER.log(Level.WARNING, "Failed to read AutoConnect config at " + path + ".", exception);
+                loadedBrokenConfig = true;
+                shouldSave = true;
+            } catch (JsonParseException | IllegalStateException exception) {
+                LOGGER.log(Level.WARNING, "Failed to parse AutoConnect config at " + path + ".", exception);
+                loadedBrokenConfig = true;
                 shouldSave = true;
             }
         }
@@ -38,6 +49,9 @@ final class AutoConnectConfigFile {
         }
 
         if (shouldSave) {
+            if (loadedBrokenConfig) {
+                backupBrokenConfig(path);
+            }
             save(path, config);
         }
 
@@ -52,7 +66,22 @@ final class AutoConnectConfigFile {
             try (Writer writer = Files.newBufferedWriter(path)) {
                 GSON.toJson(config, writer);
             }
-        } catch (IOException ignored) {
+        } catch (IOException exception) {
+            LOGGER.log(Level.WARNING, "Failed to write AutoConnect config at " + path + ".", exception);
+        }
+    }
+
+    private static void backupBrokenConfig(Path path) {
+        if (!Files.exists(path)) {
+            return;
+        }
+
+        Path backup = path.resolveSibling(path.getFileName() + ".bak");
+        try {
+            Files.copy(path, backup, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
+            LOGGER.warning("Backed up broken AutoConnect config to " + backup + ".");
+        } catch (IOException exception) {
+            LOGGER.log(Level.WARNING, "Failed to back up broken AutoConnect config at " + path + ".", exception);
         }
     }
 

@@ -28,7 +28,7 @@ public class JoinMultiplayerScreenMixin {
     @Inject(method = "join", at = @At("HEAD"))
     private void rememberJoinedServer(ServerData server, CallbackInfo ci) {
         if (server != null) {
-            AutoConnectState.beginConnectionAttempt();
+            AutoConnectState.beginManualConnectionAttempt();
             AutoConnectConfig.get().useServerForAutoConnect(server.ip);
         }
     }

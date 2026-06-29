@@ -59,3 +59,12 @@ ext.autoconnectMixinDependencies = {
             "org.ow2.asm:asm-util:${versions.asm}"
     ]
 }
+
+ext.autoconnectExpectedReleaseArtifactNames = { String archiveBaseName, String modVersion ->
+    return autoconnectMetadata().loaders.collectMany { loader, loaderConfig ->
+        loaderConfig.targets.collect { mcVersion, mcConfig ->
+            def label = mcConfig.minecraftLabel == mcVersion ? mcVersion : mcConfig.minecraftLabel
+            "${archiveBaseName}-${loader}-${modVersion}-${label}.jar"
+        }
+    }
+}
