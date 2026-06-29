@@ -22,7 +22,7 @@ version = rootProject.mod_version
 group = rootProject.maven_group
 
 def quiltLoaderVersion = "0.30.0-beta.8"
-def fabricLoaderDependency = "0.17.2"
+def fabricLoaderDependency = "0.19.3"
 def quiltJson5Version = "1.0.4+final"
 def quiltConfigVersion = "1.3.3"
 def targetJavaVersion = 25

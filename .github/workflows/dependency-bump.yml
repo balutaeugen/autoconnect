@@ -1,0 +1,133 @@
+name: Dependency Bump
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * 1"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: dependency-bump
+  cancel-in-progress: false
+
+jobs:
+  dependency-bump:
+    name: Update dependency versions
+    runs-on: ubuntu-latest
+
+    env:
+      BUMP_BRANCH: dependency/version-bump
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Check for existing dependency bump PR
+        id: existing-pr
+        shell: bash
+        run: |
+          existing_url="$(gh pr list \
+            --repo "${{ github.repository }}" \
+            --state open \
+            --head "$BUMP_BRANCH" \
+            --json url \
+            --jq '.[0].url // ""')"
+
+          if [[ -n "$existing_url" ]]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "url=$existing_url" >> "$GITHUB_OUTPUT"
+            echo "Open dependency bump PR already exists: $existing_url"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout
+        if: steps.existing-pr.outputs.exists != 'true'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ github.token }}
+
+      - name: Set up Java
+        if: steps.existing-pr.outputs.exists != 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Set up Python
+        if: steps.existing-pr.outputs.exists != 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Set up Gradle
+        if: steps.existing-pr.outputs.exists != 'true'
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.5.0"
+
+      - name: Update dependencies
+        if: steps.existing-pr.outputs.exists != 'true'
+        run: python scripts/update_dependencies.py --skip-gradle-check
+
+      - name: Detect changes
+        if: steps.existing-pr.outputs.exists != 'true'
+        id: changes
+        shell: bash
+        run: |
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "Dependency updates were detected."
+            git status --short
+          else
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "No dependency updates were detected."
+          fi
+
+      - name: Build release jars
+        if: steps.existing-pr.outputs.exists != 'true' && steps.changes.outputs.has_changes == 'true'
+        run: gradle buildReleaseJars --no-daemon --console=plain
+
+      - name: Create dependency bump branch
+        if: steps.existing-pr.outputs.exists != 'true' && steps.changes.outputs.has_changes == 'true'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BUMP_BRANCH"
+          git add \
+            gradle.properties \
+            settings.gradle \
+            fabric/fabric.gradle \
+            forge/forge.gradle \
+            forge/26.1.2/build.gradle \
+            forge/26.2/build.gradle \
+            neoforge/neoforge.gradle \
+            neoforge/26.1.2/build.gradle \
+            neoforge/26.2/build.gradle \
+            quilt/quilt.gradle \
+            quilt/26.1.2/build.gradle \
+            quilt/26.2/build.gradle
+          git commit -m "chore: bump dependency versions"
+          git push --force-with-lease origin "$BUMP_BRANCH"
+
+      - name: Create pull request
+        if: steps.existing-pr.outputs.exists != 'true' && steps.changes.outputs.has_changes == 'true'
+        shell: bash
+        run: |
+          gh pr create \
+            --repo "${{ github.repository }}" \
+            --base "${{ github.event.repository.default_branch }}" \
+            --head "$BUMP_BRANCH" \
+            --title "chore: bump dependency versions" \
+            --body "$(cat <<'EOF'
+          Automated dependency version bump.
+
+          Verification:
+          - `gradle buildReleaseJars --no-daemon --console=plain`
+
+          This workflow will not create another dependency bump PR while this branch has an open PR.
+          EOF
+          )"
