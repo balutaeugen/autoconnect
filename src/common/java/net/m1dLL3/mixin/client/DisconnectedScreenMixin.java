@@ -61,7 +61,8 @@ public abstract class DisconnectedScreenMixin extends Screen {
             AutoConnectState.prepareDisconnectedRetry();
             AutoConnectRetryWidget retryMessage = new AutoConnectRetryWidget(
                     AutoConnectState.disconnectedRetryMessage(),
-                    font);
+                    font,
+                    () -> AutoConnectState.tickDisconnectedRetry(multiplayerScreen));
             retryMessage.setMaxWidth(width - 50);
             autoConnect$retryMessage = retryMessage;
             layout.addChild(retryMessage);
@@ -99,9 +100,11 @@ public abstract class DisconnectedScreenMixin extends Screen {
         }
 
         buttons.addChild(backButton);
-        buttons.addChild(Button.builder(Component.translatable("button.autoconnect.reconnect"), button ->
+        Button reconnectButton = Button.builder(Component.translatable("button.autoconnect.reconnect"), button ->
                 AutoConnectState.reconnectManually(multiplayerScreen)
-        ).width(SIDE_BY_SIDE_BUTTON_WIDTH).build());
+        ).width(SIDE_BY_SIDE_BUTTON_WIDTH).build();
+        buttons.addChild(reconnectButton);
+        setFocused(reconnectButton);
         return buttons;
     }
 }
