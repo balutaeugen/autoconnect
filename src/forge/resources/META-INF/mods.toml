@@ -9,7 +9,7 @@ version="${version}"
 displayName="AutoConnect"
 logoFile="assets/autoconnect/icon.png"
 authors="m1dLL3"
-description='''Automatically joins your saved multiplayer server.'''
+description='''Automatically joins a saved multiplayer server when you open the Multiplayer screen.'''
 
 [[mixins]]
 config="autoconnect.client.mixins.json"

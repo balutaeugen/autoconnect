@@ -41,6 +41,10 @@ ext.configureAutoconnectJava = { Project targetProject ->
             options.encoding = "UTF-8"
             options.release.set(targetJavaVersion)
         }
+
+        targetProject.tasks.withType(Test).configureEach {
+            failOnNoDiscoveredTests = false
+        }
     }
 }
 

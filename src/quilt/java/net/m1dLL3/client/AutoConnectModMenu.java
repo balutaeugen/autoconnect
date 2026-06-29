@@ -8,11 +8,15 @@ import java.util.Map;
 public class AutoConnectModMenu implements ModMenuApi {
     @Override
     public ConfigScreenFactory<?> getModConfigScreenFactory() {
+        if (AutoConnectClothConfigScreenProvider.isAvailable()) {
+            return new AutoConnectClothConfigScreenProvider()::getConfigScreen;
+        }
+
         return AutoConnectConfigScreen::new;
     }
 
     @Override
     public Map<String, ConfigScreenFactory<?>> getProvidedConfigScreenFactories() {
-        return Map.of("autoconnect", AutoConnectConfigScreen::new);
+        return Map.of("autoconnect", getModConfigScreenFactory());
     }
 }

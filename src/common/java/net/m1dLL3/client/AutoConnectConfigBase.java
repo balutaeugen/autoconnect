@@ -9,7 +9,7 @@ abstract class AutoConnectConfigBase {
     public String lastServerAddress = "";
     public boolean retryOnFailure = false;
     public int retryCount = 0;
-    public int retryDelaySeconds = 0;
+    public int retryDelaySeconds = 3;
 
     public abstract void save();
 

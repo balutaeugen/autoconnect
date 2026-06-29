@@ -24,8 +24,8 @@ AutoConnect only changes the client-side connection flow. It does not bypass aut
 | Enabled | Turns AutoConnect on or off. When enabled, opening Multiplayer starts one automatic connection attempt if a server is configured. | `true` |
 | Server Address | The server AutoConnect should join. Joining a server manually updates this value. | Empty |
 | Retry on Failure | Allows AutoConnect to retry after a failed connection. | `false` |
-| Retries Count | Number of retry attempts after the first failed connection. | `0` |
-| Automatic Retry Timeout (in seconds) | Delay before an automatic retry. `0` retries immediately. | `0` |
+| Retry Count | Number of retry attempts after the first failed connection. | `0` |
+| Automatic Retry Timeout (in seconds) | Delay before an automatic retry. `0` retries immediately. | `3` |
 
 ## Disconnect Screen
 
@@ -40,7 +40,7 @@ AutoConnect can be configured in-game where supported:
 - Fabric: through Mod Menu when Mod Menu and Cloth Config are installed
 - Forge: through the built-in mod list/config screen
 - NeoForge: through the built-in mod list/config screen
-- Quilt: through Mod Menu when available
+- Quilt: through Mod Menu when Mod Menu and Cloth Config are installed
 
 The config file can also be edited directly:
 
@@ -50,7 +50,11 @@ config/autoconnect.json
 
 ## Compatibility
 
-AutoConnect supports Minecraft `26.1`, `26.1.1`, `26.1.2`, and `26.2`.
+<!-- autoconnect:compatibility:start -->
+AutoConnect supports Minecraft `26.1`, `26.1.1`, `26.1.2`, `26.2`.
+
+The `26.1.2` builds are used for the `26.1` compatibility range, because the mod has been tested across `26.1`, `26.1.1`, and `26.1.2` with the same compiled output.
+<!-- autoconnect:compatibility:end -->
 
 Supported loaders:
 
@@ -59,8 +63,6 @@ Supported loaders:
 - NeoForge
 - Quilt
 
-The `26.1.2` builds are used for the `26.1` compatibility range, because the mod has been tested across `26.1`, `26.1.1`, and `26.1.2` with the same compiled output.
-
 ## Downloads
 
 - Modrinth: https://modrinth.com/mod/auto-connect
@@ -68,7 +70,7 @@ The `26.1.2` builds are used for the `26.1` compatibility range, because the mod
 
 ## Optional Dependencies
 
-Fabric and Quilt users can install Mod Menu for an in-game configuration entry. Fabric also uses Cloth Config for the Mod Menu configuration screen.
+Fabric and Quilt users can install Mod Menu for an in-game configuration entry. Both Fabric and Quilt use Cloth Config for the Mod Menu configuration screen.
 
 AutoConnect does not require Fabric API.
 
@@ -100,14 +102,16 @@ gradle preparePublishArtifacts
 The generated release jars are named with the loader first, then the mod version, then the Minecraft target:
 
 ```text
-autoconnect-fabric-26.6.0-26.1-26.1.2.jar
-autoconnect-fabric-26.6.0-26.2.jar
-autoconnect-forge-26.6.0-26.1-26.1.2.jar
-autoconnect-forge-26.6.0-26.2.jar
-autoconnect-neoforge-26.6.0-26.1-26.1.2.jar
-autoconnect-neoforge-26.6.0-26.2.jar
-autoconnect-quilt-26.6.0-26.1-26.1.2.jar
-autoconnect-quilt-26.6.0-26.2.jar
+<!-- autoconnect:artifact-examples:start -->
+autoconnect-fabric-26.6.2-26.1-26.1.2.jar
+autoconnect-fabric-26.6.2-26.2.jar
+autoconnect-forge-26.6.2-26.1-26.1.2.jar
+autoconnect-forge-26.6.2-26.2.jar
+autoconnect-neoforge-26.6.2-26.1-26.1.2.jar
+autoconnect-neoforge-26.6.2-26.2.jar
+autoconnect-quilt-26.6.2-26.1-26.1.2.jar
+autoconnect-quilt-26.6.2-26.2.jar
+<!-- autoconnect:artifact-examples:end -->
 ```
 
 ## Local Testing

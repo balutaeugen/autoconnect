@@ -16,6 +16,7 @@ configureAutoconnectJava(project)
 
 configurations {
     modMenuRuntime
+    clothConfigRuntime
 }
 
 base {
@@ -54,6 +55,10 @@ repositories {
         name = "Terraformers"
         url = "https://maven.terraformersmc.com/releases/"
     }
+    maven {
+        name = "Shedaniel"
+        url = "https://maven.shedaniel.me/"
+    }
 }
 
 dependencies {
@@ -69,6 +74,13 @@ dependencies {
         transitive = false
     }
     modMenuRuntime("com.terraformersmc:modmenu:${quiltTarget.modMenu}") {
+        transitive = false
+    }
+    clientCompileOnly("me.shedaniel.cloth:cloth-config-fabric:${quiltTarget.clothConfig}") {
+        exclude module: "fabric-api"
+        exclude module: "fabric-loader"
+    }
+    clothConfigRuntime("me.shedaniel.cloth:cloth-config-fabric:${quiltTarget.clothConfig}") {
         transitive = false
     }
     [
@@ -92,7 +104,8 @@ processResources {
             "version"                 : project.version,
             "minecraft_version"       : quiltTarget.minecraftDependency,
             "fabric_loader_dependency": fabricLoaderDependency,
-            "modmenu_dependency"      : quiltTarget.modMenuDependency
+            "modmenu_dependency"      : quiltTarget.modMenuDependency,
+            "cloth_config_dependency" : quiltTarget.clothConfigDependency
     ]
 
     inputs.properties(resourceProperties)
@@ -107,6 +120,13 @@ tasks.register("copyModMenuToRunMods", Copy) {
     group = "quilt"
     description = "Copies Mod Menu into run/mods for local Quilt config screen testing without making it required."
     from configurations.modMenuRuntime
+    into layout.projectDirectory.dir("run/mods")
+}
+
+tasks.register("copyClothConfigToRunMods", Copy) {
+    group = "quilt"
+    description = "Copies Cloth Config into run/mods for local Quilt Mod Menu config screen testing without making it required."
+    from configurations.clothConfigRuntime
     into layout.projectDirectory.dir("run/mods")
 }
 
@@ -129,6 +149,7 @@ tasks.register("prepareRunMods") {
     group = "quilt"
     description = "Copies Mod Menu and the built AutoConnect Quilt jar into run/mods for packaged-mod testing."
     dependsOn tasks.named("copyModMenuToRunMods")
+    dependsOn tasks.named("copyClothConfigToRunMods")
     dependsOn tasks.named("copyBuiltModToRunMods")
 }
 
