@@ -1,31 +1,18 @@
-def quiltTargets = [
-        "quilt-26.1.2": [
-                minecraftVersion: "26.1.2",
-                minecraftRange  : ">=26.1 <=26.1.2",
-                modMenu         : "18.0.0-beta.1",
-                modMenuDependency: ">=18.0.0-beta.1"
-        ],
-        "quilt-26.2"  : [
-                minecraftVersion: "26.2",
-                minecraftRange  : "26.2",
-                modMenu         : "20.0.0-beta.4",
-                modMenuDependency: ">=20.0.0-beta.4"
-        ]
-]
+apply from: rootProject.file("gradle/autoconnect.gradle")
 
-def quiltTarget = quiltTargets[project.name]
-if (quiltTarget == null) {
-    throw new GradleException("No Quilt target configured for ${project.name}.")
-}
+def minecraftVersion = autoconnectMinecraftVersionFromProject("quilt", project.name)
+def quiltTarget = autoconnectLoaderTarget("quilt", minecraftVersion)
 
 version = rootProject.mod_version
 group = rootProject.maven_group
 
-def quiltLoaderVersion = "0.30.0-beta.8"
-def fabricLoaderDependency = "0.19.3"
-def quiltJson5Version = "1.0.4+final"
-def quiltConfigVersion = "1.3.3"
-def targetJavaVersion = 25
+def dependencyVersions = autoconnectMetadata().dependencyVersions
+def quiltLoaderVersion = dependencyVersions.quiltLoader
+def fabricLoaderDependency = dependencyVersions.fabricLoader
+def quiltJson5Version = dependencyVersions.quiltJson5
+def quiltConfigVersion = dependencyVersions.quiltConfig
+
+configureAutoconnectJava(project)
 
 configurations {
     modMenuRuntime
@@ -70,7 +57,7 @@ repositories {
 }
 
 dependencies {
-    minecraft "com.mojang:minecraft:${quiltTarget.minecraftVersion}"
+    minecraft "com.mojang:minecraft:${minecraftVersion}"
     mappings loom.layered {
         mappings(rootProject.file("gradle/identity-mappings.tiny")) {
             fallbackNamespaces("official", "named")
@@ -92,16 +79,7 @@ dependencies {
         clientRuntimeOnly it
     }
 
-    def mixinVersion = "0.17.3+mixin.0.8.7"
-    def asmVersion = "9.10.1"
-    [
-            "net.fabricmc:sponge-mixin:${mixinVersion}",
-            "org.ow2.asm:asm:${asmVersion}",
-            "org.ow2.asm:asm-analysis:${asmVersion}",
-            "org.ow2.asm:asm-commons:${asmVersion}",
-            "org.ow2.asm:asm-tree:${asmVersion}",
-            "org.ow2.asm:asm-util:${asmVersion}"
-    ].each {
+    autoconnectMixinDependencies().each {
         compileOnly it
         clientCompileOnly it
         runtimeOnly it
@@ -112,7 +90,7 @@ dependencies {
 processResources {
     def resourceProperties = [
             "version"                 : project.version,
-            "minecraft_version"       : quiltTarget.minecraftRange,
+            "minecraft_version"       : quiltTarget.minecraftDependency,
             "fabric_loader_dependency": fabricLoaderDependency,
             "modmenu_dependency"      : quiltTarget.modMenuDependency
     ]
@@ -184,19 +162,8 @@ tasks.register("hideClasspathModMetadataForPackagedRun") {
     }
 }
 
-tasks.withType(JavaCompile).configureEach {
-    options.encoding = "UTF-8"
-    options.release.set(targetJavaVersion)
-}
-
-java {
-    toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
-    sourceCompatibility = JavaVersion.toVersion(targetJavaVersion)
-    targetCompatibility = JavaVersion.toVersion(targetJavaVersion)
-}
-
 jar {
-    archiveVersion.set("${project.version}-${quiltTarget.minecraftVersion}")
+    archiveVersion.set("${project.version}-${minecraftVersion}")
 
     from(rootProject.file("LICENSE")) {
         rename { "${it}_${rootProject.archives_base_name}" }
@@ -204,7 +171,7 @@ jar {
 }
 
 tasks.named("remapJar") {
-    archiveVersion.set("${project.version}-${quiltTarget.minecraftVersion}")
+    archiveVersion.set("${project.version}-${minecraftVersion}")
 }
 
 tasks.register("addFabricMetadataToRemappedJar") {

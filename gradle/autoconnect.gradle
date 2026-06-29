@@ -1,0 +1,57 @@
+import groovy.json.JsonSlurper
+
+ext.autoconnectMetadata = {
+    if (!rootProject.ext.has("autoconnectMetadataCache")) {
+        rootProject.ext.autoconnectMetadataCache = new JsonSlurper().parse(rootProject.file("gradle/autoconnect-metadata.json"))
+    }
+
+    return rootProject.ext.autoconnectMetadataCache
+}
+
+ext.autoconnectLoaderTarget = { String loader, String minecraftVersion ->
+    def metadata = autoconnectMetadata()
+    def target = metadata.loaders[loader].targets[minecraftVersion]
+    if (target == null) {
+        throw new GradleException("No ${loader} target configured for Minecraft ${minecraftVersion}.")
+    }
+
+    return target
+}
+
+ext.autoconnectMinecraftVersionFromProject = { String loader, String projectName ->
+    def prefix = "${loader}-"
+    if (!projectName.startsWith(prefix)) {
+        throw new GradleException("Project ${projectName} is not a ${loader} target.")
+    }
+
+    return projectName.substring(prefix.length())
+}
+
+ext.configureAutoconnectJava = { Project targetProject ->
+    def targetJavaVersion = autoconnectMetadata().javaVersion as int
+
+    targetProject.plugins.withType(JavaPlugin).configureEach {
+        targetProject.java {
+            toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+            sourceCompatibility = JavaVersion.toVersion(targetJavaVersion)
+            targetCompatibility = JavaVersion.toVersion(targetJavaVersion)
+        }
+
+        targetProject.tasks.withType(JavaCompile).configureEach {
+            options.encoding = "UTF-8"
+            options.release.set(targetJavaVersion)
+        }
+    }
+}
+
+ext.autoconnectMixinDependencies = {
+    def versions = autoconnectMetadata().dependencyVersions
+    return [
+            "net.fabricmc:sponge-mixin:${versions.spongeMixin}",
+            "org.ow2.asm:asm:${versions.asm}",
+            "org.ow2.asm:asm-analysis:${versions.asm}",
+            "org.ow2.asm:asm-commons:${versions.asm}",
+            "org.ow2.asm:asm-tree:${versions.asm}",
+            "org.ow2.asm:asm-util:${versions.asm}"
+    ]
+}

@@ -17,49 +17,16 @@ plugins {
 
 apply plugin: 'fabric-loom'
 apply plugin: 'dev.kikugie.stonecutter'
+apply from: rootProject.file("gradle/autoconnect.gradle")
 
 version = project.mod_version
 group = project.maven_group
 
-def targetJavaVersion = 25
-
-allprojects {
-    plugins.withType(JavaPlugin).configureEach {
-        java {
-            toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
-            sourceCompatibility = JavaVersion.toVersion(targetJavaVersion)
-            targetCompatibility = JavaVersion.toVersion(targetJavaVersion)
-        }
-
-        tasks.withType(JavaCompile).configureEach {
-            options.encoding = "UTF-8"
-            options.release.set(targetJavaVersion)
-        }
-    }
-}
+configureAutoconnectJava(project)
 
 def minecraftVersion = stonecutter.current.version
-def minecraftVersions = [
-        "26.1.2": [
-                minecraftDependency : ">=26.1 <=26.1.2",
-                modMenu              : "18.0.0-beta.1",
-                modMenuDependency    : ">=18.0.0-beta.1",
-                clothConfig          : "26.1.154",
-                clothConfigDependency: ">=26.1.154"
-        ],
-        "26.2"  : [
-                minecraftDependency : "26.2",
-                modMenu              : "20.0.0-beta.4",
-                modMenuDependency    : ">=20.0.0-beta.4",
-                clothConfig          : "26.2.155",
-                clothConfigDependency: ">=26.2.155"
-        ]
-]
-def minecraftConfig = minecraftVersions[minecraftVersion]
-
-if (minecraftConfig == null) {
-    throw new GradleException("No dependency versions configured for Minecraft ${minecraftVersion}.")
-}
+def minecraftConfig = autoconnectLoaderTarget("fabric", minecraftVersion)
+def dependencyVersions = autoconnectMetadata().dependencyVersions
 
 configurations {
     modMenuRuntime
@@ -119,7 +86,7 @@ dependencies {
         }
     }
 
-    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc:fabric-loader:${dependencyVersions.fabricLoader}"
     modClientCompileOnly "com.terraformersmc:modmenu:${minecraftConfig.modMenu}"
     modMenuRuntime("com.terraformersmc:modmenu:${minecraftConfig.modMenu}") {
         transitive = false
@@ -132,16 +99,7 @@ dependencies {
         transitive = false
     }
 
-    def mixinVersion = "0.17.3+mixin.0.8.7"
-    def asmVersion = "9.10.1"
-    [
-            "net.fabricmc:sponge-mixin:${mixinVersion}",
-            "org.ow2.asm:asm:${asmVersion}",
-            "org.ow2.asm:asm-analysis:${asmVersion}",
-            "org.ow2.asm:asm-commons:${asmVersion}",
-            "org.ow2.asm:asm-tree:${asmVersion}",
-            "org.ow2.asm:asm-util:${asmVersion}"
-    ].each {
+    autoconnectMixinDependencies().each {
         compileOnly it
         clientCompileOnly it
         runtimeOnly it
@@ -175,7 +133,7 @@ processResources {
     def resourceProperties = [
             "version"                : project.version,
             "minecraft_version"      : minecraftConfig.minecraftDependency,
-            "loader_version"         : project.loader_version,
+            "loader_version"         : dependencyVersions.fabricLoader,
             "modmenu_dependency"     : minecraftConfig.modMenuDependency,
             "cloth_config_dependency": minecraftConfig.clothConfigDependency
     ]
@@ -186,17 +144,6 @@ processResources {
     filesMatching("fabric.mod.json") {
         expand resourceProperties
     }
-}
-
-tasks.withType(JavaCompile).configureEach {
-    options.encoding = "UTF-8"
-    options.release.set(targetJavaVersion)
-}
-
-java {
-    toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
-    sourceCompatibility = JavaVersion.toVersion(targetJavaVersion)
-    targetCompatibility = JavaVersion.toVersion(targetJavaVersion)
 }
 
 jar {
@@ -226,7 +173,8 @@ tasks.register("buildJarAndRunClient") {
 if (!rootProject.ext.has("minecraftVersionAliasesRegistered")) {
     rootProject.ext.minecraftVersionAliasesRegistered = true
     def minecraftVersionTaskGroup = "minecraft versions"
-    def rootMinecraftVersions = minecraftVersions
+    def releaseLoaders = autoconnectMetadata().loaders
+    def rootMinecraftVersions = releaseLoaders.fabric.targets
     def releaseArchiveBaseName = project.archives_base_name
     def releaseModVersion = project.version
 
@@ -245,10 +193,8 @@ if (!rootProject.ext.has("minecraftVersionAliasesRegistered")) {
         }
     }
 
-    [
-            "26.1_2": "26.1.2",
-            "26_2"  : "26.2"
-    ].each { taskSuffix, mcVersion ->
+    releaseLoaders.neoforge.targets.each { mcVersion, mcConfig ->
+        def taskSuffix = mcVersion.replace(".", "_")
         rootProject.tasks.register("buildNeoForge${taskSuffix}") {
             group = minecraftVersionTaskGroup
             description = "Builds the NeoForge mod for Minecraft ${mcVersion}."
@@ -262,10 +208,8 @@ if (!rootProject.ext.has("minecraftVersionAliasesRegistered")) {
         }
     }
 
-    [
-            "26.1_2": "26.1.2",
-            "26_2"  : "26.2"
-    ].each { taskSuffix, mcVersion ->
+    releaseLoaders.quilt.targets.each { mcVersion, mcConfig ->
+        def taskSuffix = mcVersion.replace(".", "_")
         rootProject.tasks.register("buildQuilt${taskSuffix}") {
             group = minecraftVersionTaskGroup
             description = "Builds the Quilt mod for Minecraft ${mcVersion}."
@@ -289,9 +233,11 @@ if (!rootProject.ext.has("minecraftVersionAliasesRegistered")) {
         group = minecraftVersionTaskGroup
         description = "Builds and collects the uploadable release jars."
         dependsOn rootProject.tasks.named("checkAllMinecraftVersions")
-        dependsOn ":forge-26.1.2:build", ":forge-26.2:build"
-        dependsOn ":neoforge-26.1.2:build", ":neoforge-26.2:build"
-        dependsOn ":quilt-26.1.2:build", ":quilt-26.2:build"
+        releaseLoaders.each { loader, loaderConfig ->
+            if (loader != "fabric") {
+                dependsOn loaderConfig.targets.keySet().collect { ":${loader}-${it}:build" }
+            }
+        }
         into rootProject.layout.buildDirectory.dir("libs")
 
         doFirst {
@@ -300,37 +246,17 @@ if (!rootProject.ext.has("minecraftVersionAliasesRegistered")) {
             }
         }
 
-        from(rootProject.project(":fabric-26.1.2").layout.buildDirectory.file("libs/${releaseArchiveBaseName}-fabric-${releaseModVersion}-26.1.2.jar")) {
-            rename {
-                "${releaseArchiveBaseName}-fabric-${releaseModVersion}-26.1-26.1.2.jar"
+        releaseLoaders.each { loader, loaderConfig ->
+            loaderConfig.targets.each { mcVersion, mcConfig ->
+                from(rootProject.project(":${loader}-${mcVersion}").layout.buildDirectory.file("libs/${releaseArchiveBaseName}-${loader}-${releaseModVersion}-${mcVersion}.jar")) {
+                    if (mcConfig.minecraftLabel != mcVersion) {
+                        rename {
+                            "${releaseArchiveBaseName}-${loader}-${releaseModVersion}-${mcConfig.minecraftLabel}.jar"
+                        }
+                    }
+                }
             }
         }
-
-        from(rootProject.project(":fabric-26.2").layout.buildDirectory.file("libs/${releaseArchiveBaseName}-fabric-${releaseModVersion}-26.2.jar"))
-
-        from(rootProject.project(":forge-26.1.2").layout.buildDirectory.file("libs/${releaseArchiveBaseName}-forge-${releaseModVersion}-26.1.2.jar")) {
-            rename {
-                "${releaseArchiveBaseName}-forge-${releaseModVersion}-26.1-26.1.2.jar"
-            }
-        }
-
-        from(rootProject.project(":forge-26.2").layout.buildDirectory.file("libs/${releaseArchiveBaseName}-forge-${releaseModVersion}-26.2.jar"))
-
-        from(rootProject.project(":neoforge-26.1.2").layout.buildDirectory.file("libs/${releaseArchiveBaseName}-neoforge-${releaseModVersion}-26.1.2.jar")) {
-            rename {
-                "${releaseArchiveBaseName}-neoforge-${releaseModVersion}-26.1-26.1.2.jar"
-            }
-        }
-
-        from(rootProject.project(":neoforge-26.2").layout.buildDirectory.file("libs/${releaseArchiveBaseName}-neoforge-${releaseModVersion}-26.2.jar"))
-
-        from(rootProject.project(":quilt-26.1.2").layout.buildDirectory.file("libs/${releaseArchiveBaseName}-quilt-${releaseModVersion}-26.1.2.jar")) {
-            rename {
-                "${releaseArchiveBaseName}-quilt-${releaseModVersion}-26.1-26.1.2.jar"
-            }
-        }
-
-        from(rootProject.project(":quilt-26.2").layout.buildDirectory.file("libs/${releaseArchiveBaseName}-quilt-${releaseModVersion}-26.2.jar"))
     }
 
     rootProject.tasks.register("preparePublishArtifacts", Copy) {
@@ -353,8 +279,10 @@ if (!rootProject.ext.has("minecraftVersionAliasesRegistered")) {
         description = "Prints the Stonecutter Minecraft dependency version matrix."
 
         doLast {
-            rootMinecraftVersions.each { mcVersion, mcConfig ->
-                logger.lifecycle("${mcVersion}: Mod Menu ${mcConfig.modMenu} (${mcConfig.modMenuDependency}), Cloth Config ${mcConfig.clothConfig} (${mcConfig.clothConfigDependency})")
+            releaseLoaders.each { loader, loaderConfig ->
+                loaderConfig.targets.each { mcVersion, mcConfig ->
+                    logger.lifecycle("${loader} ${mcVersion}: ${mcConfig}")
+                }
             }
         }
     }
