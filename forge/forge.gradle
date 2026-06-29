@@ -21,6 +21,10 @@ sourceSets {
         }
         output.resourcesDir = layout.buildDirectory.dir("classes/java/main").get().asFile
     }
+    test {
+        java.setSrcDirs([])
+        resources.setSrcDirs([])
+    }
 }
 
 minecraft {
@@ -68,7 +72,7 @@ processResources {
     }
 }
 
-tasks.withType(JavaCompile).configureEach {
+tasks.named("compileJava", JavaCompile) {
     source = rootProject.fileTree("src/common/java") + rootProject.fileTree("src/forge/java")
 }
 

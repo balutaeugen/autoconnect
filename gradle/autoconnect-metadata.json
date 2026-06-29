@@ -81,14 +81,18 @@
           "minecraftLabel": "26.1-26.1.2",
           "minecraftVersions": ["26.1", "26.1.1", "26.1.2"],
           "modMenu": "18.0.0-beta.1",
-          "modMenuDependency": ">=18.0.0-beta.1"
+          "modMenuDependency": ">=18.0.0-beta.1",
+          "clothConfig": "26.1.154",
+          "clothConfigDependency": ">=26.1.154"
         },
         "26.2": {
           "minecraftDependency": "26.2",
           "minecraftLabel": "26.2",
           "minecraftVersions": ["26.2"],
           "modMenu": "20.0.0-beta.4",
-          "modMenuDependency": ">=20.0.0-beta.4"
+          "modMenuDependency": ">=20.0.0-beta.4",
+          "clothConfig": "26.2.155",
+          "clothConfigDependency": ">=26.2.155"
         }
       }
     }

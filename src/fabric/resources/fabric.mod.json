@@ -3,7 +3,7 @@
   "id": "autoconnect",
   "version": "${version}",
   "name": "AutoConnect",
-  "description": "Automatically joins your saved multiplayer server.",
+  "description": "Automatically joins a saved multiplayer server when you open the Multiplayer screen.",
   "authors": [
     "m1dLL3"
   ],

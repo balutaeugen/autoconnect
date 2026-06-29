@@ -36,7 +36,7 @@ public class AutoConnectConfigScreen extends Screen {
     private EditBox retryDelaySeconds;
 
     public AutoConnectConfigScreen(Screen parent) {
-        super(Component.literal("AutoConnect"));
+        super(Component.translatable("title.autoconnect.config"));
         this.parent = parent;
     }
 
@@ -51,16 +51,16 @@ public class AutoConnectConfigScreen extends Screen {
         addRenderableWidget(new WrappedTextWidget(contentX, TOP_MARGIN, contentWidth, TITLE_HEIGHT, title, true));
 
         LinearLayout settings = LinearLayout.vertical().spacing(SPACING);
-        settings.addChild(description("Controls when AutoConnect joins a server and how failed joins are retried."));
+        settings.addChild(description(Component.translatable("text.autoconnect.config.description")));
         Button enabledButton = Button.builder(enabledLabel(), button -> {
             config.enabled = !config.enabled;
             button.setMessage(enabledLabel());
         }).width(contentWidth).build();
         settings.addChild(enabledButton);
-        settings.addChild(description("When enabled, opening Multiplayer starts one automatic connection attempt."));
+        settings.addChild(description(Component.translatable("text.autoconnect.enabled.description")));
 
-        settings.addChild(label("Server Address"));
-        serverAddress = new EditBox(font, contentWidth, BUTTON_HEIGHT, Component.literal("Server Address"));
+        settings.addChild(label(Component.translatable("option.autoconnect.server_address")));
+        serverAddress = new EditBox(font, contentWidth, BUTTON_HEIGHT, Component.translatable("option.autoconnect.server_address"));
         serverAddress.setValue(config.connectAddress());
         settings.addChild(serverAddress);
         settings.addChild(description(lastServerDescription()));
@@ -71,19 +71,19 @@ public class AutoConnectConfigScreen extends Screen {
             button.setMessage(retryLabel());
         }).width(contentWidth).build();
         settings.addChild(retryButton);
-        settings.addChild(description("When enabled, AutoConnect retries automatically from the disconnect screen."));
+        settings.addChild(description(Component.translatable("text.autoconnect.retry_on_failure.description")));
 
-        settings.addChild(label("Retries Count"));
-        retryCount = new EditBox(font, contentWidth, BUTTON_HEIGHT, Component.literal("Retries Count"));
+        settings.addChild(label(Component.translatable("option.autoconnect.retry_count")));
+        retryCount = new EditBox(font, contentWidth, BUTTON_HEIGHT, Component.translatable("option.autoconnect.retry_count"));
         retryCount.setValue(Integer.toString(config.retryCount));
         settings.addChild(retryCount);
-        settings.addChild(description("Additional attempts after the first failed connection."));
+        settings.addChild(description(Component.translatable("text.autoconnect.retry_count.description")));
 
-        settings.addChild(label("Automatic Retry Timeout (in seconds)"));
-        retryDelaySeconds = new EditBox(font, contentWidth, BUTTON_HEIGHT, Component.literal("Automatic Retry Timeout"));
+        settings.addChild(label(Component.translatable("option.autoconnect.retry_delay_seconds")));
+        retryDelaySeconds = new EditBox(font, contentWidth, BUTTON_HEIGHT, Component.translatable("option.autoconnect.retry_delay_seconds"));
         retryDelaySeconds.setValue(Integer.toString(config.retryDelaySeconds));
         settings.addChild(retryDelaySeconds);
-        settings.addChild(description("0 means retry as soon as the disconnect screen opens."));
+        settings.addChild(description(Component.translatable("text.autoconnect.retry_delay_seconds.description")));
 
         settings.setX(contentX);
         settings.setY(scrollY);
@@ -91,7 +91,7 @@ public class AutoConnectConfigScreen extends Screen {
         addRenderableWidget(new SettingsScrollArea(contentX, scrollY, contentWidth, scrollHeight, settings));
 
         LinearLayout buttons = LinearLayout.horizontal().spacing(SPACING);
-        buttons.addChild(Button.builder(Component.literal("Save"), button -> {
+        buttons.addChild(Button.builder(Component.translatable("gui.done"), button -> {
             saveConfig();
             onClose();
         }).width((contentWidth - SPACING) / 2).build());
@@ -149,12 +149,12 @@ public class AutoConnectConfigScreen extends Screen {
         return Math.min(MAX_CONTENT_WIDTH, availableWidth);
     }
 
-    private WrappedTextWidget label(String text) {
-        return new WrappedTextWidget(0, 0, contentWidth(), textHeight(text, contentWidth()), Component.literal(text), false);
+    private WrappedTextWidget label(Component text) {
+        return new WrappedTextWidget(0, 0, contentWidth(), textHeight(text, contentWidth()), text, false);
     }
 
-    private WrappedTextWidget description(String text) {
-        return new WrappedTextWidget(0, 0, contentWidth(), textHeight(text, contentWidth()), Component.literal(text), false);
+    private WrappedTextWidget description(Component text) {
+        return new WrappedTextWidget(0, 0, contentWidth(), textHeight(text, contentWidth()), text, false);
     }
 
     private AbstractWidget spacer(int height) {
@@ -171,24 +171,28 @@ public class AutoConnectConfigScreen extends Screen {
         return spacer;
     }
 
-    private int textHeight(String text, int contentWidth) {
-        return Math.max(font.lineHeight, font.wordWrapHeight(Component.literal(text), contentWidth));
+    private int textHeight(Component text, int contentWidth) {
+        return Math.max(font.lineHeight, font.wordWrapHeight(text, contentWidth));
     }
 
     private Component enabledLabel() {
-        return Component.literal("Enabled: " + (config.enabled ? "On" : "Off"));
+        return Component.translatable("option.autoconnect.enabled.value", toggleLabel(config.enabled));
     }
 
     private Component retryLabel() {
-        return Component.literal("Retry on Failure: " + (config.retryOnFailure ? "On" : "Off"));
+        return Component.translatable("option.autoconnect.retry_on_failure.value", toggleLabel(config.retryOnFailure));
     }
 
-    private String lastServerDescription() {
+    private Component toggleLabel(boolean enabled) {
+        return Component.translatable(enabled ? "text.autoconnect.on" : "text.autoconnect.off");
+    }
+
+    private Component lastServerDescription() {
         if (config.lastServerAddress == null || config.lastServerAddress.isBlank()) {
-            return "Last connected server: none remembered yet.";
+            return Component.translatable("text.autoconnect.last_server.none");
         }
 
-        return "Last connected server: " + config.lastServerAddress;
+        return Component.translatable("text.autoconnect.last_server.value", config.lastServerAddress);
     }
 
     private final class WrappedTextWidget extends AbstractWidget {

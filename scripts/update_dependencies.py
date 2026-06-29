@@ -243,6 +243,8 @@ def main():
 
     update_metadata_dependency_pair(metadata, "quilt", "26.1.2", "modMenu", "modMenuDependency", mod_menu_18, "Quilt 26.1.x Mod Menu")
     update_metadata_dependency_pair(metadata, "quilt", "26.2", "modMenu", "modMenuDependency", mod_menu_20, "Quilt 26.2 Mod Menu")
+    update_metadata_dependency_pair(metadata, "quilt", "26.1.2", "clothConfig", "clothConfigDependency", cloth_261, "Quilt 26.1.x Cloth Config")
+    update_metadata_dependency_pair(metadata, "quilt", "26.2", "clothConfig", "clothConfigDependency", cloth_262, "Quilt 26.2 Cloth Config")
     update_regex("quilt/26.1.2/build.gradle", r"(id 'org\.quiltmc\.loom' version ')[^']+'", lambda match: f"{match.group(1)}{quilt_loom}'", "Quilt Loom", dry_run)
     update_regex("quilt/26.2/build.gradle", r"(id 'org\.quiltmc\.loom' version ')[^']+'", lambda match: f"{match.group(1)}{quilt_loom}'", "Quilt Loom", dry_run)
 

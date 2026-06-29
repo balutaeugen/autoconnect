@@ -262,7 +262,7 @@ if (!rootProject.ext.has("minecraftVersionAliasesRegistered")) {
     rootProject.tasks.register("preparePublishArtifacts", Copy) {
         group = minecraftVersionTaskGroup
         description = "Creates a clean publish folder containing only the jars that should be uploaded."
-        dependsOn rootProject.tasks.named("buildReleaseJars")
+        dependsOn "generateReleaseChecksums"
         into rootProject.layout.projectDirectory.dir("publish")
 
         doFirst {
@@ -271,6 +271,96 @@ if (!rootProject.ext.has("minecraftVersionAliasesRegistered")) {
 
         from(rootProject.layout.buildDirectory.dir("libs")) {
             include "${releaseArchiveBaseName}-*.jar"
+            include "${releaseArchiveBaseName}-*.jar.sha256"
+        }
+    }
+
+    rootProject.tasks.register("generateReleaseChecksums") {
+        group = minecraftVersionTaskGroup
+        description = "Writes SHA-256 checksum files for release jars."
+        dependsOn rootProject.tasks.named("buildReleaseJars")
+
+        inputs.files(rootProject.fileTree(rootProject.layout.buildDirectory.dir("libs")) {
+            include "${releaseArchiveBaseName}-*.jar"
+        })
+        outputs.dir rootProject.layout.buildDirectory.dir("libs")
+
+        doFirst {
+            delete rootProject.fileTree(rootProject.layout.buildDirectory.dir("libs")) {
+                include "${releaseArchiveBaseName}-*.jar.sha256"
+            }
+        }
+
+        doLast {
+            rootProject.fileTree(rootProject.layout.buildDirectory.dir("libs")) {
+                include "${releaseArchiveBaseName}-*.jar"
+            }.each { file ->
+                def digest = java.security.MessageDigest.getInstance("SHA-256")
+                file.withInputStream { input ->
+                    byte[] buffer = new byte[8192]
+                    int read
+                    while ((read = input.read(buffer)) != -1) {
+                        digest.update(buffer, 0, read)
+                    }
+                }
+                def checksum = digest.digest().collect { String.format("%02x", it) }.join()
+                new File(file.parentFile, "${file.name}.sha256").text = "${checksum}  ${file.name}\n"
+            }
+        }
+    }
+
+    def renderGeneratedReadmeContent = { String readmeText ->
+        def compatibilityVersions = rootMinecraftVersions.values()
+                .collectMany { it.minecraftVersions }
+                .unique()
+                .collect { "`${it}`" }
+                .join(", ")
+        def compatibilitySection = """AutoConnect supports Minecraft ${compatibilityVersions}.
+
+The `26.1.2` builds are used for the `26.1` compatibility range, because the mod has been tested across `26.1`, `26.1.1`, and `26.1.2` with the same compiled output."""
+
+        def artifactExamples = releaseLoaders.collectMany { loader, loaderConfig ->
+            loaderConfig.targets.collect { mcVersion, mcConfig ->
+                def label = mcConfig.minecraftLabel == mcVersion ? mcVersion : mcConfig.minecraftLabel
+                "${releaseArchiveBaseName}-${loader}-${releaseModVersion}-${label}.jar"
+            }
+        }.join("\n")
+
+        def replaceSection = { String source, String name, String replacement ->
+            def start = "<!-- autoconnect:${name}:start -->"
+            def end = "<!-- autoconnect:${name}:end -->"
+            def pattern = java.util.regex.Pattern.compile(
+                    java.util.regex.Pattern.quote(start) + ".*?" + java.util.regex.Pattern.quote(end),
+                    java.util.regex.Pattern.DOTALL)
+            return pattern.matcher(source).replaceFirst(
+                    java.util.regex.Matcher.quoteReplacement("${start}\n${replacement}\n${end}"))
+        }
+
+        def updated = replaceSection(readmeText, "compatibility", compatibilitySection)
+        return replaceSection(updated, "artifact-examples", artifactExamples)
+    }
+
+    rootProject.tasks.register("updateReadmeGeneratedContent") {
+        group = "documentation"
+        description = "Regenerates README compatibility and release artifact examples from Gradle metadata."
+
+        doLast {
+            def readme = rootProject.file("README.md")
+            readme.text = renderGeneratedReadmeContent(readme.getText("UTF-8"))
+        }
+    }
+
+    rootProject.tasks.register("checkReadmeGeneratedContent") {
+        group = "verification"
+        description = "Verifies README compatibility and release artifact examples match Gradle metadata."
+
+        doLast {
+            def readme = rootProject.file("README.md")
+            def current = readme.getText("UTF-8")
+            def expected = renderGeneratedReadmeContent(current)
+            if (current != expected) {
+                throw new GradleException("README generated compatibility/version examples are out of date. Run updateReadmeGeneratedContent.")
+            }
         }
     }
 

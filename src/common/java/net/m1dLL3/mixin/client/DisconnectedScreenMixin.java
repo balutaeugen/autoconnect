@@ -85,7 +85,7 @@ public abstract class DisconnectedScreenMixin extends Screen {
         }
 
         buttons.addChild(backButton);
-        buttons.addChild(Button.builder(Component.literal("Reconnect"), button ->
+        buttons.addChild(Button.builder(Component.translatable("button.autoconnect.reconnect"), button ->
                 AutoConnectState.reconnectManually(multiplayerScreen)
         ).width(SIDE_BY_SIDE_BUTTON_WIDTH).build());
         return buttons;

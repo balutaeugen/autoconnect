@@ -108,10 +108,10 @@ public final class AutoConnectState {
     public static Component disconnectedRetryMessage() {
         long seconds = disconnectedRetrySeconds();
         if (seconds == 0L) {
-            return Component.literal("AutoConnect is reconnecting...");
+            return Component.translatable("text.autoconnect.reconnecting");
         }
 
-        return Component.literal("AutoConnect will reconnect in " + seconds + "s.");
+        return Component.translatable("text.autoconnect.reconnect_countdown", seconds);
     }
 
     public static long disconnectedRetrySeconds() {

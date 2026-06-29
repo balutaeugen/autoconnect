@@ -91,14 +91,11 @@ jobs:
           PY
 
       - name: Commit version bump
-        run: |
-          git add gradle.properties
-          git commit -m "Bump version to ${{ steps.version.outputs.version }}"
-          git push origin HEAD:${{ github.event.repository.default_branch }}
-
-      - name: Create release branch
+        shell: bash
         run: |
           git switch -c "${{ steps.version.outputs.release_branch }}"
+          git add gradle.properties
+          git commit -m "Bump version to ${{ steps.version.outputs.version }}"
           git push origin "${{ steps.version.outputs.release_branch }}"
 
   publish:
@@ -179,7 +176,9 @@ jobs:
           github-commitish: ${{ needs.prepare_release.outputs.release_branch }}
           github-draft: false
           github-prerelease: ${{ inputs.release_type != 'release' }}
-          files: publish/*.jar
+          files: |
+            publish/*.jar
+            publish/*.jar.sha256
           name: AutoConnect ${{ needs.prepare_release.outputs.version }}
           version: ${{ needs.prepare_release.outputs.version }}
           version-type: ${{ inputs.release_type }}

@@ -10,6 +10,8 @@ publish/
 **/publish/
 /net/
 net/
+!src/**/net/
+!src/**/net/**
 
 *.log
 *.log.gz

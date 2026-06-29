@@ -110,7 +110,8 @@ jobs:
             neoforge/26.2/build.gradle \
             quilt/quilt.gradle \
             quilt/26.1.2/build.gradle \
-            quilt/26.2/build.gradle
+            quilt/26.2/build.gradle \
+            README.md
           git commit -m "chore: bump dependency versions"
           git push --force-with-lease origin "$BUMP_BRANCH"
 
