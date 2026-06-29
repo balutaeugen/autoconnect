@@ -104,14 +104,14 @@ The generated release jars are named with the loader first, then the mod version
 
 ```text
 <!-- autoconnect:artifact-examples:start -->
-autoconnect-fabric-26.6.2-26.1-26.1.2.jar
-autoconnect-fabric-26.6.2-26.2.jar
-autoconnect-forge-26.6.2-26.1-26.1.2.jar
-autoconnect-forge-26.6.2-26.2.jar
-autoconnect-neoforge-26.6.2-26.1-26.1.2.jar
-autoconnect-neoforge-26.6.2-26.2.jar
-autoconnect-quilt-26.6.2-26.1-26.1.2.jar
-autoconnect-quilt-26.6.2-26.2.jar
+autoconnect-fabric-26.6.3-26.1-26.1.2.jar
+autoconnect-fabric-26.6.3-26.2.jar
+autoconnect-forge-26.6.3-26.1-26.1.2.jar
+autoconnect-forge-26.6.3-26.2.jar
+autoconnect-neoforge-26.6.3-26.1-26.1.2.jar
+autoconnect-neoforge-26.6.3-26.2.jar
+autoconnect-quilt-26.6.3-26.1-26.1.2.jar
+autoconnect-quilt-26.6.3-26.2.jar
 <!-- autoconnect:artifact-examples:end -->
 ```
 
