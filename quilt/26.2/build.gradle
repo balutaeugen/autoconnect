@@ -5,4 +5,4 @@ plugins {
     id 'org.quiltmc.loom' version '1.15.1'
 }
 
-apply from: rootProject.file("quilt.gradle")
+apply from: rootProject.file("quilt/quilt.gradle")

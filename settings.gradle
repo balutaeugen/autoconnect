@@ -36,8 +36,8 @@ stonecutter {
     }
 }
 
-project(':fabric-26.1.2').buildFileName = '../../fabric.gradle'
-project(':fabric-26.2').buildFileName = '../../fabric.gradle'
+project(':fabric-26.1.2').buildFileName = '../../fabric/fabric.gradle'
+project(':fabric-26.2').buildFileName = '../../fabric/fabric.gradle'
 
 include 'forge-26.1.2'
 include 'forge-26.2'

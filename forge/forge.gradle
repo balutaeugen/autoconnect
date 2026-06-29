@@ -1,13 +1,13 @@
 def forgeTargets = [
         "forge-26.1.2": [
                 minecraftVersion: "26.1.2",
-                forgeVersion    : "64.0.10",
+                forgeVersion    : "64.0.11",
                 minecraftRange  : "[26.1,26.1.2]",
                 forgeRange      : "[62,)"
         ],
         "forge-26.2"  : [
                 minecraftVersion: "26.2",
-                forgeVersion    : "65.0.0",
+                forgeVersion    : "65.0.1",
                 minecraftRange  : "[26.2]",
                 forgeRange      : "[65,)"
         ]

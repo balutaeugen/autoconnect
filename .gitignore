@@ -17,6 +17,8 @@ publish/
 *.log
 *.log.gz
 *.class
+__pycache__/
+*.py[cod]
 
 out/
 *.iml
