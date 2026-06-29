@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import json
 import os
 import re
 import shutil
@@ -88,6 +89,42 @@ def write_text(relative_path, text, dry_run):
         (ROOT / relative_path).write_text(text, encoding="utf-8", newline="")
 
 
+def read_metadata():
+    return json.loads(read_text("gradle/autoconnect-metadata.json"))
+
+
+def write_metadata(metadata, dry_run):
+    text = json.dumps(metadata, indent=2) + "\n"
+    write_text("gradle/autoconnect-metadata.json", text, dry_run)
+
+
+def update_metadata_path(metadata, path, new_value, label):
+    current = metadata
+    for key in path[:-1]:
+        current = current[key]
+
+    old_value = current[path[-1]]
+    if old_value == new_value:
+        return
+
+    current[path[-1]] = new_value
+    CHANGES.append(f"gradle/autoconnect-metadata.json: {label} {old_value} -> {new_value}")
+
+
+def update_metadata_dependency_pair(metadata, loader, minecraft_version, version_key, dependency_key, new_version, label):
+    target = metadata["loaders"][loader]["targets"][minecraft_version]
+    old_version = target[version_key]
+    if old_version != new_version:
+        target[version_key] = new_version
+        CHANGES.append(f"gradle/autoconnect-metadata.json: {label} {old_version} -> {new_version}")
+
+    old_dependency = target[dependency_key]
+    new_dependency = f">={new_version}"
+    if old_dependency != new_dependency:
+        target[dependency_key] = new_dependency
+        CHANGES.append(f"gradle/autoconnect-metadata.json: {label} dependency {old_dependency} -> {new_dependency}")
+
+
 def update_regex(relative_path, pattern, replacement, label, dry_run):
     text = read_text(relative_path)
     match = re.search(pattern, text)
@@ -100,29 +137,6 @@ def update_regex(relative_path, pattern, replacement, label, dry_run):
         old_value = match.group(match.lastindex or 0)
         CHANGES.append(f"{relative_path}: {label} {old_value} -> {new_value}")
         write_text(relative_path, updated, dry_run)
-
-
-def update_quoted_version(relative_path, prefix_pattern, new_version, label, dry_run, index=0):
-    text = read_text(relative_path)
-    pattern = re.compile(f"({prefix_pattern})\"([^\"]+)\"")
-    matches = list(pattern.finditer(text))
-    if len(matches) <= index:
-        raise RuntimeError(f"Could not find {label} occurrence {index} in {relative_path}")
-
-    match = matches[index]
-    old_version = match.group(2)
-    if old_version == new_version:
-        return
-
-    new_value = f'{match.group(1)}"{new_version}"'
-    updated = text[:match.start()] + new_value + text[match.end():]
-    CHANGES.append(f"{relative_path}: {label} {old_version} -> {new_version}")
-    write_text(relative_path, updated, dry_run)
-
-
-def update_dependency_pair(relative_path, version_key, dependency_key, new_version, label, dry_run, index=0):
-    update_quoted_version(relative_path, rf"\s+{version_key}\s+:\s+", new_version, label, dry_run, index)
-    update_quoted_version(relative_path, rf"\s+{dependency_key}\s*:\s+", f">={new_version}", f"{label} dependency", dry_run, index)
 
 
 def update_gradle_plugin_range(relative_paths, plugin_id, new_version, dry_run):
@@ -198,41 +212,41 @@ def main():
     cloth_262 = latest_matching(URLS["cloth_config"], lambda version: version.startswith("26.2."))
 
     dry_run = args.dry_run
+    metadata = read_metadata()
 
-    update_regex("gradle.properties", r"(loader_version=)[^\r\n]+", lambda match: f"{match.group(1)}{fabric_loader}", "Fabric loader", dry_run)
+    update_metadata_path(metadata, ["dependencyVersions", "fabricLoader"], fabric_loader, "Fabric loader")
+    update_metadata_path(metadata, ["dependencyVersions", "spongeMixin"], sponge_mixin, "Sponge Mixin")
+    update_metadata_path(metadata, ["dependencyVersions", "asm"], asm, "ASM")
+    update_metadata_path(metadata, ["dependencyVersions", "quiltLoader"], quilt_loader, "Quilt loader")
+    update_metadata_path(metadata, ["dependencyVersions", "quiltJson5"], quilt_json5, "Quilt JSON5")
+    update_metadata_path(metadata, ["dependencyVersions", "quiltConfig"], quilt_config, "Quilt Config")
 
     update_regex("settings.gradle", r"(id 'dev\.kikugie\.stonecutter' version ')[^']+'", lambda match: f"{match.group(1)}{stonecutter}'", "Stonecutter", dry_run)
     update_regex("settings.gradle", r"(id 'org\.gradle\.toolchains\.foojay-resolver-convention' version ')[^']+'", lambda match: f"{match.group(1)}{foojay_resolver}'", "Foojay resolver", dry_run)
 
     update_regex("fabric/fabric.gradle", r"(classpath 'net\.fabricmc:fabric-loom:)[^']+'", lambda match: f"{match.group(1)}{fabric_loom}'", "Fabric Loom", dry_run)
-    update_dependency_pair("fabric/fabric.gradle", "modMenu", "modMenuDependency", mod_menu_18, "Fabric 26.1.x Mod Menu", dry_run, 0)
-    update_dependency_pair("fabric/fabric.gradle", "modMenu", "modMenuDependency", mod_menu_20, "Fabric 26.2 Mod Menu", dry_run, 1)
-    update_dependency_pair("fabric/fabric.gradle", "clothConfig", "clothConfigDependency", cloth_261, "Fabric 26.1.x Cloth Config", dry_run, 0)
-    update_dependency_pair("fabric/fabric.gradle", "clothConfig", "clothConfigDependency", cloth_262, "Fabric 26.2 Cloth Config", dry_run, 1)
-    update_quoted_version("fabric/fabric.gradle", r"    def mixinVersion = ", sponge_mixin, "Fabric Sponge Mixin", dry_run)
-    update_quoted_version("fabric/fabric.gradle", r"    def asmVersion = ", asm, "Fabric ASM", dry_run)
+    update_metadata_dependency_pair(metadata, "fabric", "26.1.2", "modMenu", "modMenuDependency", mod_menu_18, "Fabric 26.1.x Mod Menu")
+    update_metadata_dependency_pair(metadata, "fabric", "26.2", "modMenu", "modMenuDependency", mod_menu_20, "Fabric 26.2 Mod Menu")
+    update_metadata_dependency_pair(metadata, "fabric", "26.1.2", "clothConfig", "clothConfigDependency", cloth_261, "Fabric 26.1.x Cloth Config")
+    update_metadata_dependency_pair(metadata, "fabric", "26.2", "clothConfig", "clothConfigDependency", cloth_262, "Fabric 26.2 Cloth Config")
 
-    update_quoted_version("forge/forge.gradle", r"\s+forgeVersion\s+:\s+", forge_2612_loader, "Forge 26.1.2", dry_run, 0)
-    update_quoted_version("forge/forge.gradle", r"\s+forgeVersion\s+:\s+", forge_262_loader, "Forge 26.2", dry_run, 1)
+    update_metadata_path(metadata, ["loaders", "forge", "targets", "26.1.2", "forgeVersion"], forge_2612_loader, "Forge 26.1.2")
+    update_metadata_path(metadata, ["loaders", "forge", "targets", "26.2", "forgeVersion"], forge_262_loader, "Forge 26.2")
     update_gradle_plugin_range(["forge/26.1.2/build.gradle", "forge/26.2/build.gradle"], "net.minecraftforge.gradle", forge_gradle, dry_run)
 
-    update_quoted_version("neoforge/neoforge.gradle", r"\s+neoForgeVersion\s+:\s+", neoforge_2612, "NeoForge 26.1.2", dry_run, 0)
-    update_quoted_version("neoforge/neoforge.gradle", r"\s+neoForgeVersion\s+:\s+", neoforge_262, "NeoForge 26.2", dry_run, 1)
-    update_quoted_version("neoforge/neoforge.gradle", r"\s+neoForgeRange\s+:\s+", f"[{neoforge_2612},)", "NeoForge 26.1.2 range", dry_run, 0)
-    update_quoted_version("neoforge/neoforge.gradle", r"\s+neoForgeRange\s+:\s+", f"[{neoforge_262},)", "NeoForge 26.2 range", dry_run, 1)
+    update_metadata_path(metadata, ["loaders", "neoforge", "targets", "26.1.2", "neoForgeVersion"], neoforge_2612, "NeoForge 26.1.2")
+    update_metadata_path(metadata, ["loaders", "neoforge", "targets", "26.2", "neoForgeVersion"], neoforge_262, "NeoForge 26.2")
+    update_metadata_path(metadata, ["loaders", "neoforge", "targets", "26.1.2", "neoForgeRange"], f"[{neoforge_2612},)", "NeoForge 26.1.2 range")
+    update_metadata_path(metadata, ["loaders", "neoforge", "targets", "26.2", "neoForgeRange"], f"[{neoforge_262},)", "NeoForge 26.2 range")
     update_regex("neoforge/26.1.2/build.gradle", r"(id 'net\.neoforged\.moddev' version ')[^']+'", lambda match: f"{match.group(1)}{neoforge_moddev}'", "NeoForge ModDev", dry_run)
     update_regex("neoforge/26.2/build.gradle", r"(id 'net\.neoforged\.moddev' version ')[^']+'", lambda match: f"{match.group(1)}{neoforge_moddev}'", "NeoForge ModDev", dry_run)
 
-    update_dependency_pair("quilt/quilt.gradle", "modMenu", "modMenuDependency", mod_menu_18, "Quilt 26.1.x Mod Menu", dry_run, 0)
-    update_dependency_pair("quilt/quilt.gradle", "modMenu", "modMenuDependency", mod_menu_20, "Quilt 26.2 Mod Menu", dry_run, 1)
-    update_quoted_version("quilt/quilt.gradle", r"def quiltLoaderVersion = ", quilt_loader, "Quilt loader", dry_run)
-    update_quoted_version("quilt/quilt.gradle", r"def fabricLoaderDependency = ", fabric_loader, "Quilt Fabric loader dependency", dry_run)
-    update_quoted_version("quilt/quilt.gradle", r"def quiltJson5Version = ", quilt_json5, "Quilt JSON5", dry_run)
-    update_quoted_version("quilt/quilt.gradle", r"def quiltConfigVersion = ", quilt_config, "Quilt Config", dry_run)
-    update_quoted_version("quilt/quilt.gradle", r"    def mixinVersion = ", sponge_mixin, "Quilt Sponge Mixin", dry_run)
-    update_quoted_version("quilt/quilt.gradle", r"    def asmVersion = ", asm, "Quilt ASM", dry_run)
+    update_metadata_dependency_pair(metadata, "quilt", "26.1.2", "modMenu", "modMenuDependency", mod_menu_18, "Quilt 26.1.x Mod Menu")
+    update_metadata_dependency_pair(metadata, "quilt", "26.2", "modMenu", "modMenuDependency", mod_menu_20, "Quilt 26.2 Mod Menu")
     update_regex("quilt/26.1.2/build.gradle", r"(id 'org\.quiltmc\.loom' version ')[^']+'", lambda match: f"{match.group(1)}{quilt_loom}'", "Quilt Loom", dry_run)
     update_regex("quilt/26.2/build.gradle", r"(id 'org\.quiltmc\.loom' version ')[^']+'", lambda match: f"{match.group(1)}{quilt_loom}'", "Quilt Loom", dry_run)
+
+    write_metadata(metadata, dry_run)
 
     if CHANGES:
         print("\nPlanned dependency updates:")

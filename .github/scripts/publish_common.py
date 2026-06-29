@@ -11,6 +11,7 @@ from typing import Any, Callable, TypeVar
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
+ROOT = SCRIPT_DIR.parents[1]
 USER_AGENT = "AutoConnect publish workflow"
 UPLOAD_RETRY_SECONDS = 10 * 60
 UPLOAD_RETRY_DELAY_SECONDS = 15
@@ -18,7 +19,29 @@ T = TypeVar("T")
 
 
 def load_matrix() -> dict[str, Any]:
-    return json.loads((SCRIPT_DIR / "publish_matrix.json").read_text(encoding="utf-8"))
+    metadata = json.loads((ROOT / "gradle/autoconnect-metadata.json").read_text(encoding="utf-8"))
+    targets = []
+    loaders = {}
+
+    for loader, loader_data in metadata["loaders"].items():
+        loaders[loader] = loader_data["displayName"]
+        for target_data in loader_data["targets"].values():
+            targets.append(
+                {
+                    "loader": loader,
+                    "minecraft_label": target_data["minecraftLabel"],
+                    "minecraft_versions": target_data["minecraftVersions"],
+                }
+            )
+
+    return {
+        "modrinth_project_id": metadata["modrinthProjectId"],
+        "curseforge_project_id": metadata["curseforgeProjectId"],
+        "java_version": str(metadata["javaVersion"]),
+        "environment": metadata["environment"],
+        "loaders": loaders,
+        "targets": targets,
+    }
 
 
 def artifact_path(target: dict[str, Any], version: str) -> Path:

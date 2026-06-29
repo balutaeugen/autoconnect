@@ -1,18 +1,15 @@
 .gradle/
 .idea/
+.vscode/
 build/
-versions/*/build/
+**/build/
 run/
-versions/*/run/
-forge/*/build/
-forge/*/run/
-neoforge/*/build/
-neoforge/*/run/
+**/run/
 quilt/*/.gradle/
-quilt/*/build/
-quilt/*/run/
 publish/
+**/publish/
 /net/
+net/
 
 *.log
 *.log.gz

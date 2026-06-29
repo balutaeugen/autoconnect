@@ -1,30 +1,13 @@
-def neoForgeTargets = [
-        "neoforge-26.1.2": [
-                minecraftVersion: "26.1.2",
-                neoForgeVersion : "26.1.2.76",
-                minecraftRange  : "[26.1,26.1.2]",
-                neoForgeRange   : "[26.1.2.76,)"
-        ],
-        "neoforge-26.2"  : [
-                minecraftVersion: "26.2",
-                neoForgeVersion : "26.2.0.7-beta",
-                minecraftRange  : "[26.2]",
-                neoForgeRange   : "[26.2.0.7-beta,)"
-        ]
-]
+apply from: rootProject.file("gradle/autoconnect.gradle")
 
-def neoForgeTarget = neoForgeTargets[project.name]
-if (neoForgeTarget == null) {
-    throw new GradleException("No NeoForge target configured for ${project.name}.")
-}
+def minecraftVersion = autoconnectMinecraftVersionFromProject("neoforge", project.name)
+def neoForgeTarget = autoconnectLoaderTarget("neoforge", minecraftVersion)
 
 version = rootProject.mod_version
 group = rootProject.maven_group
 base.archivesName = "${rootProject.archives_base_name}-neoforge"
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(25)
-java.sourceCompatibility = JavaVersion.VERSION_25
-java.targetCompatibility = JavaVersion.VERSION_25
+configureAutoconnectJava(project)
 
 sourceSets {
     main {
@@ -76,13 +59,11 @@ processResources {
 }
 
 tasks.withType(JavaCompile).configureEach {
-    options.encoding = "UTF-8"
-    options.release.set(25)
     source = rootProject.fileTree("src/common/java") + rootProject.fileTree("src/neoforge/java")
 }
 
 tasks.named("jar", Jar) {
-    archiveVersion.set("${project.version}-${neoForgeTarget.minecraftVersion}")
+    archiveVersion.set("${project.version}-${minecraftVersion}")
 
     manifest {
         attributes["MixinConfigs"] = "autoconnect.client.mixins.json"
@@ -91,12 +72,4 @@ tasks.named("jar", Jar) {
     from(rootProject.file("LICENSE")) {
         rename { "${it}_${rootProject.archives_base_name}" }
     }
-}
-
-tasks.withType(Test).configureEach {
-    enabled = false
-}
-
-tasks.named("compileTestJava").configure {
-    enabled = false
 }

@@ -1,30 +1,13 @@
-def forgeTargets = [
-        "forge-26.1.2": [
-                minecraftVersion: "26.1.2",
-                forgeVersion    : "64.0.11",
-                minecraftRange  : "[26.1,26.1.2]",
-                forgeRange      : "[62,)"
-        ],
-        "forge-26.2"  : [
-                minecraftVersion: "26.2",
-                forgeVersion    : "65.0.1",
-                minecraftRange  : "[26.2]",
-                forgeRange      : "[65,)"
-        ]
-]
+apply from: rootProject.file("gradle/autoconnect.gradle")
 
-def forgeTarget = forgeTargets[project.name]
-if (forgeTarget == null) {
-    throw new GradleException("No Forge target configured for ${project.name}.")
-}
+def minecraftVersion = autoconnectMinecraftVersionFromProject("forge", project.name)
+def forgeTarget = autoconnectLoaderTarget("forge", minecraftVersion)
 
 version = rootProject.mod_version
 group = rootProject.maven_group
 base.archivesName = "${rootProject.archives_base_name}-forge"
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(25)
-java.sourceCompatibility = JavaVersion.VERSION_25
-java.targetCompatibility = JavaVersion.VERSION_25
+configureAutoconnectJava(project)
 
 sourceSets {
     main {
@@ -41,7 +24,7 @@ sourceSets {
 }
 
 minecraft {
-    mappings channel: "official", version: forgeTarget.minecraftVersion
+    mappings channel: "official", version: minecraftVersion
 
     runs {
         configureEach {
@@ -67,7 +50,7 @@ repositories {
 }
 
 dependencies {
-    implementation minecraft.dependency("net.minecraftforge:forge:${forgeTarget.minecraftVersion}-${forgeTarget.forgeVersion}")
+    implementation minecraft.dependency("net.minecraftforge:forge:${minecraftVersion}-${forgeTarget.forgeVersion}")
 }
 
 processResources {
@@ -86,13 +69,11 @@ processResources {
 }
 
 tasks.withType(JavaCompile).configureEach {
-    options.encoding = "UTF-8"
-    options.release.set(25)
     source = rootProject.fileTree("src/common/java") + rootProject.fileTree("src/forge/java")
 }
 
 tasks.named("jar", Jar) {
-    archiveVersion.set("${project.version}-${forgeTarget.minecraftVersion}")
+    archiveVersion.set("${project.version}-${minecraftVersion}")
 
     manifest {
         attributes["MixinConfigs"] = "autoconnect.client.mixins.json"
@@ -101,8 +82,4 @@ tasks.named("jar", Jar) {
     from(rootProject.file("LICENSE")) {
         rename { "${it}_${rootProject.archives_base_name}" }
     }
-}
-
-tasks.withType(Test).configureEach {
-    enabled = false
 }
