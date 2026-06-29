@@ -8,8 +8,8 @@ def quiltTargets = [
         "quilt-26.2"  : [
                 minecraftVersion: "26.2",
                 minecraftRange  : "26.2",
-                modMenu         : "20.0.0-beta.3",
-                modMenuDependency: ">=20.0.0-beta.3"
+                modMenu         : "20.0.0-beta.4",
+                modMenuDependency: ">=20.0.0-beta.4"
         ]
 ]
 
@@ -93,7 +93,7 @@ dependencies {
     }
 
     def mixinVersion = "0.17.3+mixin.0.8.7"
-    def asmVersion = "9.8"
+    def asmVersion = "9.10.1"
     [
             "net.fabricmc:sponge-mixin:${mixinVersion}",
             "org.ow2.asm:asm:${asmVersion}",

@@ -7,7 +7,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'net.fabricmc:fabric-loom:1.17.11'
+        classpath 'net.fabricmc:fabric-loom:1.17.12'
     }
 }
 
@@ -49,8 +49,8 @@ def minecraftVersions = [
         ],
         "26.2"  : [
                 minecraftDependency : "26.2",
-                modMenu              : "20.0.0-alpha.1",
-                modMenuDependency    : ">=20.0.0-alpha.1",
+                modMenu              : "20.0.0-beta.4",
+                modMenuDependency    : ">=20.0.0-beta.4",
                 clothConfig          : "26.2.155",
                 clothConfigDependency: ">=26.2.155"
         ]
@@ -133,7 +133,7 @@ dependencies {
     }
 
     def mixinVersion = "0.17.3+mixin.0.8.7"
-    def asmVersion = "9.8"
+    def asmVersion = "9.10.1"
     [
             "net.fabricmc:sponge-mixin:${mixinVersion}",
             "org.ow2.asm:asm:${asmVersion}",
