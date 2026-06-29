@@ -44,6 +44,10 @@ sourceSets {
         ])
         resources.setSrcDirs([])
     }
+    test {
+        java.setSrcDirs([])
+        resources.setSrcDirs([])
+    }
 }
 
 repositories {

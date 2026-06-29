@@ -65,6 +65,10 @@ sourceSets {
         ])
         resources.setSrcDirs([])
     }
+    test {
+        java.setSrcDirs([])
+        resources.setSrcDirs([])
+    }
 }
 
 repositories {
@@ -259,6 +263,21 @@ if (!rootProject.ext.has("minecraftVersionAliasesRegistered")) {
         }
     }
 
+    rootProject.tasks.register("validateReleaseJars") {
+        group = minecraftVersionTaskGroup
+        description = "Verifies every expected release jar exists before publishing."
+        dependsOn rootProject.tasks.named("buildReleaseJars")
+
+        doLast {
+            def missing = autoconnectExpectedReleaseArtifactNames(releaseArchiveBaseName, releaseModVersion).findAll { name ->
+                !rootProject.layout.buildDirectory.file("libs/${name}").get().asFile.exists()
+            }
+            if (!missing.isEmpty()) {
+                throw new GradleException("Missing expected release jar(s): ${missing.join(', ')}")
+            }
+        }
+    }
+
     rootProject.tasks.register("preparePublishArtifacts", Copy) {
         group = minecraftVersionTaskGroup
         description = "Creates a clean publish folder containing only the jars that should be uploaded."
@@ -278,7 +297,7 @@ if (!rootProject.ext.has("minecraftVersionAliasesRegistered")) {
     rootProject.tasks.register("generateReleaseChecksums") {
         group = minecraftVersionTaskGroup
         description = "Writes SHA-256 checksum files for release jars."
-        dependsOn rootProject.tasks.named("buildReleaseJars")
+        dependsOn rootProject.tasks.named("validateReleaseJars")
 
         inputs.files(rootProject.fileTree(rootProject.layout.buildDirectory.dir("libs")) {
             include "${releaseArchiveBaseName}-*.jar"
@@ -358,7 +377,7 @@ The `26.1.2` builds are used for the `26.1` compatibility range, because the mod
             def readme = rootProject.file("README.md")
             def current = readme.getText("UTF-8")
             def expected = renderGeneratedReadmeContent(current)
-            if (current != expected) {
+            if (current.replace("\r\n", "\n") != expected.replace("\r\n", "\n")) {
                 throw new GradleException("README generated compatibility/version examples are out of date. Run updateReadmeGeneratedContent.")
             }
         }

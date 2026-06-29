@@ -25,6 +25,7 @@
   "text.autoconnect.reconnect_countdown": "AutoConnect will reconnect in %ss.",
   "text.autoconnect.reconnecting": "AutoConnect is reconnecting...",
   "text.autoconnect.server_address.blank": "Leave blank to skip auto-connect until a server is configured.",
+  "text.autoconnect.server_address.invalid": "AutoConnect skipped invalid server address: %s",
   "text.autoconnect.server_address.tooltip": "Server address to join automatically.",
   "title.autoconnect.config": "AutoConnect"
 }

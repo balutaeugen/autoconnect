@@ -11,7 +11,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[3]
 CHANGES = []
 
 URLS = {
@@ -139,17 +139,55 @@ def update_regex(relative_path, pattern, replacement, label, dry_run):
         write_text(relative_path, updated, dry_run)
 
 
+def update_gradle_plugin_version(relative_path, plugin_id, new_version, label, dry_run):
+    text = read_text(relative_path)
+    lines = text.splitlines(keepends=True)
+    prefix_pattern = re.compile(rf"^(\s*id\s+['\"]{re.escape(plugin_id)}['\"]\s+version\s+['\"])([^'\"]+)(['\"].*)$")
+
+    for index, line in enumerate(lines):
+        match = prefix_pattern.match(line.rstrip("\r\n"))
+        if not match:
+            continue
+
+        old_version = match.group(2)
+        updated_line = f"{match.group(1)}{new_version}{match.group(3)}"
+        newline = "\r\n" if line.endswith("\r\n") else "\n" if line.endswith("\n") else ""
+        if old_version != new_version:
+            lines[index] = updated_line + newline
+            CHANGES.append(f"{relative_path}: {label} {old_version} -> {new_version}")
+            write_text(relative_path, "".join(lines), dry_run)
+        return
+
+    raise RuntimeError(f"Could not find Gradle plugin {plugin_id} in {relative_path}")
+
+
+def update_gradle_plugin_minimum(relative_path, plugin_id, new_minimum, label, dry_run):
+    text = read_text(relative_path)
+    lines = text.splitlines(keepends=True)
+    prefix_pattern = re.compile(
+        rf"^(\s*id\s+['\"]{re.escape(plugin_id)}['\"]\s+version\s+['\"]\[)([^,]+)(,[^)]+\)['\"].*)$"
+    )
+
+    for index, line in enumerate(lines):
+        match = prefix_pattern.match(line.rstrip("\r\n"))
+        if not match:
+            continue
+
+        old_minimum = match.group(2)
+        updated_line = f"{match.group(1)}{new_minimum}{match.group(3)}"
+        newline = "\r\n" if line.endswith("\r\n") else "\n" if line.endswith("\n") else ""
+        if old_minimum != new_minimum:
+            lines[index] = updated_line + newline
+            CHANGES.append(f"{relative_path}: {label} {old_minimum} -> {new_minimum}")
+            write_text(relative_path, "".join(lines), dry_run)
+        return
+
+    raise RuntimeError(f"Could not find Gradle plugin range for {plugin_id} in {relative_path}")
+
+
 def update_gradle_plugin_range(relative_paths, plugin_id, new_version, dry_run):
-    escaped = re.escape(plugin_id)
-    pattern = rf"(id '{escaped}' version ')\[[^,]+,([^)]+)\)'"
     for relative_path in relative_paths:
-        update_regex(
-            relative_path,
-            pattern,
-            lambda match: f"{match.group(1)}[{new_version},{match.group(2)})'",
-            f"{plugin_id} minimum",
-            dry_run,
-        )
+        update_gradle_plugin_minimum(relative_path, plugin_id, new_version, f"{plugin_id} minimum", dry_run)
 
 
 def gradle_command():
@@ -221,8 +259,8 @@ def main():
     update_metadata_path(metadata, ["dependencyVersions", "quiltJson5"], quilt_json5, "Quilt JSON5")
     update_metadata_path(metadata, ["dependencyVersions", "quiltConfig"], quilt_config, "Quilt Config")
 
-    update_regex("settings.gradle", r"(id 'dev\.kikugie\.stonecutter' version ')[^']+'", lambda match: f"{match.group(1)}{stonecutter}'", "Stonecutter", dry_run)
-    update_regex("settings.gradle", r"(id 'org\.gradle\.toolchains\.foojay-resolver-convention' version ')[^']+'", lambda match: f"{match.group(1)}{foojay_resolver}'", "Foojay resolver", dry_run)
+    update_gradle_plugin_version("settings.gradle", "dev.kikugie.stonecutter", stonecutter, "Stonecutter", dry_run)
+    update_gradle_plugin_version("settings.gradle", "org.gradle.toolchains.foojay-resolver-convention", foojay_resolver, "Foojay resolver", dry_run)
 
     update_regex("fabric/fabric.gradle", r"(classpath 'net\.fabricmc:fabric-loom:)[^']+'", lambda match: f"{match.group(1)}{fabric_loom}'", "Fabric Loom", dry_run)
     update_metadata_dependency_pair(metadata, "fabric", "26.1.2", "modMenu", "modMenuDependency", mod_menu_18, "Fabric 26.1.x Mod Menu")
@@ -238,15 +276,15 @@ def main():
     update_metadata_path(metadata, ["loaders", "neoforge", "targets", "26.2", "neoForgeVersion"], neoforge_262, "NeoForge 26.2")
     update_metadata_path(metadata, ["loaders", "neoforge", "targets", "26.1.2", "neoForgeRange"], f"[{neoforge_2612},)", "NeoForge 26.1.2 range")
     update_metadata_path(metadata, ["loaders", "neoforge", "targets", "26.2", "neoForgeRange"], f"[{neoforge_262},)", "NeoForge 26.2 range")
-    update_regex("neoforge/26.1.2/build.gradle", r"(id 'net\.neoforged\.moddev' version ')[^']+'", lambda match: f"{match.group(1)}{neoforge_moddev}'", "NeoForge ModDev", dry_run)
-    update_regex("neoforge/26.2/build.gradle", r"(id 'net\.neoforged\.moddev' version ')[^']+'", lambda match: f"{match.group(1)}{neoforge_moddev}'", "NeoForge ModDev", dry_run)
+    update_gradle_plugin_version("neoforge/26.1.2/build.gradle", "net.neoforged.moddev", neoforge_moddev, "NeoForge ModDev", dry_run)
+    update_gradle_plugin_version("neoforge/26.2/build.gradle", "net.neoforged.moddev", neoforge_moddev, "NeoForge ModDev", dry_run)
 
     update_metadata_dependency_pair(metadata, "quilt", "26.1.2", "modMenu", "modMenuDependency", mod_menu_18, "Quilt 26.1.x Mod Menu")
     update_metadata_dependency_pair(metadata, "quilt", "26.2", "modMenu", "modMenuDependency", mod_menu_20, "Quilt 26.2 Mod Menu")
     update_metadata_dependency_pair(metadata, "quilt", "26.1.2", "clothConfig", "clothConfigDependency", cloth_261, "Quilt 26.1.x Cloth Config")
     update_metadata_dependency_pair(metadata, "quilt", "26.2", "clothConfig", "clothConfigDependency", cloth_262, "Quilt 26.2 Cloth Config")
-    update_regex("quilt/26.1.2/build.gradle", r"(id 'org\.quiltmc\.loom' version ')[^']+'", lambda match: f"{match.group(1)}{quilt_loom}'", "Quilt Loom", dry_run)
-    update_regex("quilt/26.2/build.gradle", r"(id 'org\.quiltmc\.loom' version ')[^']+'", lambda match: f"{match.group(1)}{quilt_loom}'", "Quilt Loom", dry_run)
+    update_gradle_plugin_version("quilt/26.1.2/build.gradle", "org.quiltmc.loom", quilt_loom, "Quilt Loom", dry_run)
+    update_gradle_plugin_version("quilt/26.2/build.gradle", "org.quiltmc.loom", quilt_loom, "Quilt Loom", dry_run)
 
     write_metadata(metadata, dry_run)
 

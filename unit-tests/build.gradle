@@ -1,0 +1,34 @@
+plugins {
+    id 'java'
+}
+
+apply from: rootProject.file("gradle/autoconnect.gradle")
+
+repositories {
+    mavenCentral()
+}
+
+configureAutoconnectJava(project)
+
+sourceSets {
+    main {
+        java {
+            srcDir rootProject.file("src/common/java")
+            include "net/m1dLL3/client/AutoConnectConfigBase.java"
+            include "net/m1dLL3/client/AutoConnectRetryCounters.java"
+            include "net/m1dLL3/client/AutoConnectServerAddress.java"
+        }
+    }
+    test {
+        java.srcDir rootProject.file("src/test/java")
+    }
+}
+
+dependencies {
+    testImplementation "org.junit.jupiter:junit-jupiter:6.0.1"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+tasks.named("test") {
+    useJUnitPlatform()
+}

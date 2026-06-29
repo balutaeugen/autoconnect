@@ -1,3 +1,5 @@
+import groovy.json.JsonSlurper
+
 pluginManagement {
     repositories {
         maven {
@@ -27,28 +29,27 @@ plugins {
 
 rootProject.name = 'AutoConnect'
 
+def autoconnectMetadata = new JsonSlurper().parse(file('gradle/autoconnect-metadata.json'))
+
+include 'unit-tests'
+project(':unit-tests').projectDir = file('unit-tests')
+
 stonecutter {
     create(rootProject) {
-        versions([
-                'fabric-26.1.2': '26.1.2',
-                'fabric-26.2'  : '26.2'
-        ])
+        versions(autoconnectMetadata.loaders.fabric.targets.collectEntries { minecraftVersion, target ->
+            [("fabric-${minecraftVersion}".toString()): minecraftVersion.toString()]
+        })
     }
 }
 
-project(':fabric-26.1.2').buildFileName = '../../fabric/fabric.gradle'
-project(':fabric-26.2').buildFileName = '../../fabric/fabric.gradle'
+autoconnectMetadata.loaders.fabric.targets.keySet().each { minecraftVersion ->
+    project(":${"fabric-${minecraftVersion}".toString()}").buildFileName = '../../fabric/fabric.gradle'
+}
 
-include 'forge-26.1.2'
-include 'forge-26.2'
-include 'neoforge-26.1.2'
-include 'neoforge-26.2'
-include 'quilt-26.1.2'
-include 'quilt-26.2'
-
-project(':forge-26.1.2').projectDir = file('forge/26.1.2')
-project(':forge-26.2').projectDir = file('forge/26.2')
-project(':neoforge-26.1.2').projectDir = file('neoforge/26.1.2')
-project(':neoforge-26.2').projectDir = file('neoforge/26.2')
-project(':quilt-26.1.2').projectDir = file('quilt/26.1.2')
-project(':quilt-26.2').projectDir = file('quilt/26.2')
+['forge', 'neoforge', 'quilt'].each { loader ->
+    autoconnectMetadata.loaders[loader].targets.keySet().each { minecraftVersion ->
+        def projectName = "${loader}-${minecraftVersion}".toString()
+        include projectName
+        project(":${projectName}").projectDir = file("${loader}/${minecraftVersion}")
+    }
+}

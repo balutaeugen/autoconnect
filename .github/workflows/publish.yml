@@ -167,6 +167,11 @@ jobs:
       - name: Build publish artifacts
         run: gradle preparePublishArtifacts --no-daemon --console=plain
 
+      - name: Validate publish artifacts
+        env:
+          VERSION: ${{ needs.prepare_release.outputs.version }}
+        run: python .github/actions/publish/validate_publish_artifacts.py
+
       - name: Publish GitHub release
         if: ${{ inputs.publish_github_release }}
         uses: Kir-Antipov/mc-publish@v3.3
@@ -191,7 +196,7 @@ jobs:
           VERSION: ${{ needs.prepare_release.outputs.version }}
           RELEASE_TYPE: ${{ inputs.release_type }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
-        run: python .github/scripts/publish_modrinth.py
+        run: python .github/actions/publish/publish_modrinth.py
 
       - name: Publish CurseForge artifacts
         if: ${{ inputs.publish_curseforge }}
@@ -199,4 +204,4 @@ jobs:
           VERSION: ${{ needs.prepare_release.outputs.version }}
           RELEASE_TYPE: ${{ inputs.release_type }}
           CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
-        run: python .github/scripts/publish_curseforge.py
+        run: python .github/actions/publish/publish_curseforge.py
