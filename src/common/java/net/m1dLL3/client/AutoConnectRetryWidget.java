@@ -7,9 +7,16 @@ import net.minecraft.network.chat.Component;
 
 public class AutoConnectRetryWidget extends StringWidget {
     private long displayedSeconds = -1L;
+    private final Runnable retryReady;
 
     public AutoConnectRetryWidget(Component message, Font font) {
+        this(message, font, () -> {
+        });
+    }
+
+    public AutoConnectRetryWidget(Component message, Font font, Runnable retryReady) {
         super(message, font);
+        this.retryReady = retryReady;
         updateMessage();
     }
 
@@ -26,10 +33,16 @@ public class AutoConnectRetryWidget extends StringWidget {
     private void updateMessage() {
         long seconds = AutoConnectState.disconnectedRetrySeconds();
         if (seconds == displayedSeconds) {
+            if (seconds == 0L) {
+                retryReady.run();
+            }
             return;
         }
 
         displayedSeconds = seconds;
         setMessage(AutoConnectState.disconnectedRetryMessage());
+        if (seconds == 0L) {
+            retryReady.run();
+        }
     }
 }

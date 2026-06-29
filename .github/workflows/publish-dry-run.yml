@@ -1,0 +1,80 @@
+name: Publish Dry Run
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: "Release type to validate"
+        required: true
+        default: "release"
+        type: choice
+        options:
+          - release
+          - beta
+          - alpha
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-dry-run-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dry_run:
+    name: Build and validate publish metadata
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.5.0"
+
+      - name: Read version
+        id: version
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          from pathlib import Path
+
+          for line in Path("gradle.properties").read_text(encoding="utf-8").splitlines():
+              if line.startswith("mod_version="):
+                  print(f"version={line.split('=', 1)[1]}")
+                  break
+          else:
+              raise SystemExit("gradle.properties must contain mod_version")
+          PY
+
+      - name: Build publish artifacts
+        run: gradle preparePublishArtifacts --no-daemon --console=plain
+
+      - name: Write dry-run changelog
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          mkdir -p build
+          printf 'AutoConnect %s dry run\n\n- Metadata validation only.\n' "$VERSION" > build/publish-changelog.md
+
+      - name: Validate publish artifacts
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: python .github/actions/publish/validate_publish_artifacts.py
+
+      - name: Validate Modrinth and CurseForge metadata
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          RELEASE_TYPE: ${{ github.event.inputs.release_type || 'release' }}
+        run: python .github/actions/publish/validate_publish_metadata.py

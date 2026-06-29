@@ -14,8 +14,10 @@ class AutoConnectConfigBaseTest {
         config.lastServerAddress = null;
         config.retryCount = -3;
         config.retryDelaySeconds = AutoConnectConfigBase.MAX_RETRY_DELAY_SECONDS + 1;
+        config.configVersion = 0;
 
         assertTrue(config.sanitize());
+        assertEquals(AutoConnectConfigBase.CURRENT_CONFIG_VERSION, config.configVersion);
         assertEquals("example.org:25565", config.serverAddress);
         assertEquals("", config.lastServerAddress);
         assertEquals(0, config.retryCount);
@@ -47,6 +49,32 @@ class AutoConnectConfigBaseTest {
 
         config.rememberServer(" play.example.org:25565 ");
         assertEquals(1, config.saveCount);
+    }
+
+    @Test
+    void connectAddressFallsBackToLastServerWhenSavedServerIsBlank() {
+        TestConfig config = new TestConfig();
+        config.serverAddress = " ";
+        config.lastServerAddress = " play.example.org:25565 ";
+
+        assertEquals("play.example.org:25565", config.connectAddress());
+    }
+
+    @Test
+    void savedServerControlsPromoteAndClearLastServer() {
+        TestConfig config = new TestConfig();
+        config.lastServerAddress = "play.example.org";
+
+        config.useLastServerForAutoConnect();
+
+        assertEquals("play.example.org", config.serverAddress);
+        assertEquals("play.example.org", config.lastServerAddress);
+        assertEquals(1, config.saveCount);
+
+        config.clearLastServerAddress();
+
+        assertEquals("", config.lastServerAddress);
+        assertEquals(2, config.saveCount);
     }
 
     @Test

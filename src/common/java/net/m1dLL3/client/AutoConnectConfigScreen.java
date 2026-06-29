@@ -34,6 +34,7 @@ public class AutoConnectConfigScreen extends Screen {
     private EditBox serverAddress;
     private EditBox retryCount;
     private EditBox retryDelaySeconds;
+    private WrappedTextWidget lastServerText;
 
     public AutoConnectConfigScreen(Screen parent) {
         super(Component.translatable("title.autoconnect.config"));
@@ -61,9 +62,25 @@ public class AutoConnectConfigScreen extends Screen {
 
         settings.addChild(label(Component.translatable("option.autoconnect.server_address")));
         serverAddress = new EditBox(font, contentWidth, BUTTON_HEIGHT, Component.translatable("option.autoconnect.server_address"));
-        serverAddress.setValue(config.connectAddress());
+        serverAddress.setValue(config.serverAddress == null ? "" : config.serverAddress);
         settings.addChild(serverAddress);
-        settings.addChild(description(lastServerDescription()));
+        lastServerText = description(lastServerDescription());
+        settings.addChild(lastServerText);
+        LinearLayout savedServerButtons = LinearLayout.horizontal().spacing(SPACING);
+        Button useLastServerButton = Button.builder(Component.translatable("button.autoconnect.use_last_server"), button -> {
+            serverAddress.setValue(config.lastServerAddress);
+        }).width((contentWidth - SPACING) / 2).build();
+        useLastServerButton.active = config.hasLastServerAddress();
+        savedServerButtons.addChild(useLastServerButton);
+        Button clearSavedServerButton = Button.builder(Component.translatable("button.autoconnect.clear_saved_server"), button -> {
+            config.clearLastServerAddress();
+            lastServerText.setMessage(lastServerDescription());
+            button.active = false;
+            useLastServerButton.active = false;
+        }).width((contentWidth - SPACING) / 2).build();
+        clearSavedServerButton.active = config.hasLastServerAddress();
+        savedServerButtons.addChild(clearSavedServerButton);
+        settings.addChild(savedServerButtons);
         settings.addChild(spacer(4));
 
         Button retryButton = Button.builder(retryLabel(), button -> {
