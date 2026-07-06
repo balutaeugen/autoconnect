@@ -18,7 +18,11 @@
         "26.1.2": {
           "minecraftDependency": ">=26.1 <=26.1.2",
           "minecraftLabel": "26.1-26.1.2",
-          "minecraftVersions": ["26.1", "26.1.1", "26.1.2"],
+          "minecraftVersions": [
+            "26.1",
+            "26.1.1",
+            "26.1.2"
+          ],
           "modMenu": "18.0.0-beta.1",
           "modMenuDependency": ">=18.0.0-beta.1",
           "clothConfig": "26.1.154",
@@ -27,7 +31,9 @@
         "26.2": {
           "minecraftDependency": "26.2",
           "minecraftLabel": "26.2",
-          "minecraftVersions": ["26.2"],
+          "minecraftVersions": [
+            "26.2"
+          ],
           "modMenu": "20.0.0-beta.4",
           "modMenuDependency": ">=20.0.0-beta.4",
           "clothConfig": "26.2.155",
@@ -40,15 +46,21 @@
       "targets": {
         "26.1.2": {
           "minecraftLabel": "26.1-26.1.2",
-          "minecraftVersions": ["26.1", "26.1.1", "26.1.2"],
+          "minecraftVersions": [
+            "26.1",
+            "26.1.1",
+            "26.1.2"
+          ],
           "forgeVersion": "64.0.11",
           "minecraftRange": "[26.1,26.1.2]",
           "forgeRange": "[62,)"
         },
         "26.2": {
           "minecraftLabel": "26.2",
-          "minecraftVersions": ["26.2"],
-          "forgeVersion": "65.0.1",
+          "minecraftVersions": [
+            "26.2"
+          ],
+          "forgeVersion": "65.0.3",
           "minecraftRange": "[26.2]",
           "forgeRange": "[65,)"
         }
@@ -59,17 +71,23 @@
       "targets": {
         "26.1.2": {
           "minecraftLabel": "26.1-26.1.2",
-          "minecraftVersions": ["26.1", "26.1.1", "26.1.2"],
-          "neoForgeVersion": "26.1.2.76",
+          "minecraftVersions": [
+            "26.1",
+            "26.1.1",
+            "26.1.2"
+          ],
+          "neoForgeVersion": "26.1.2.78",
           "minecraftRange": "[26.1,26.1.2]",
-          "neoForgeRange": "[26.1.2.76,)"
+          "neoForgeRange": "[26.1.2.78,)"
         },
         "26.2": {
           "minecraftLabel": "26.2",
-          "minecraftVersions": ["26.2"],
-          "neoForgeVersion": "26.2.0.7-beta",
+          "minecraftVersions": [
+            "26.2"
+          ],
+          "neoForgeVersion": "26.2.0.8-beta",
           "minecraftRange": "[26.2]",
-          "neoForgeRange": "[26.2.0.7-beta,)"
+          "neoForgeRange": "[26.2.0.8-beta,)"
         }
       }
     },
@@ -79,7 +97,11 @@
         "26.1.2": {
           "minecraftDependency": ">=26.1 <=26.1.2",
           "minecraftLabel": "26.1-26.1.2",
-          "minecraftVersions": ["26.1", "26.1.1", "26.1.2"],
+          "minecraftVersions": [
+            "26.1",
+            "26.1.1",
+            "26.1.2"
+          ],
           "modMenu": "18.0.0-beta.1",
           "modMenuDependency": ">=18.0.0-beta.1",
           "clothConfig": "26.1.154",
@@ -88,7 +110,9 @@
         "26.2": {
           "minecraftDependency": "26.2",
           "minecraftLabel": "26.2",
-          "minecraftVersions": ["26.2"],
+          "minecraftVersions": [
+            "26.2"
+          ],
           "modMenu": "20.0.0-beta.4",
           "modMenuDependency": ">=20.0.0-beta.4",
           "clothConfig": "26.2.155",
