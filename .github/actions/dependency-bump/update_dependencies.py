@@ -89,7 +89,7 @@ def write_text(relative_path, text, dry_run):
         (ROOT / relative_path).write_text(text, encoding="utf-8", newline="")
 
 
-def read_metadata():
+def read_project_metadata():
     return json.loads(read_text("gradle/autoconnect-metadata.json"))
 
 
@@ -250,7 +250,7 @@ def main():
     cloth_262 = latest_matching(URLS["cloth_config"], lambda version: version.startswith("26.2."))
 
     dry_run = args.dry_run
-    metadata = read_metadata()
+    metadata = read_project_metadata()
 
     update_metadata_path(metadata, ["dependencyVersions", "fabricLoader"], fabric_loader, "Fabric loader")
     update_metadata_path(metadata, ["dependencyVersions", "spongeMixin"], sponge_mixin, "Sponge Mixin")
