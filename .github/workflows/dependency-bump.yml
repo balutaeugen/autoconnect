@@ -70,7 +70,10 @@ jobs:
 
       - name: Update dependencies
         if: steps.existing-pr.outputs.exists != 'true'
-        run: python .github/actions/dependency-bump/update_dependencies.py --skip-gradle-check
+        shell: bash
+        run: |
+          set -o pipefail
+          python .github/actions/dependency-bump/update_dependencies.py --skip-gradle-check | tee dependency-updates.log
 
       - name: Detect changes
         if: steps.existing-pr.outputs.exists != 'true'
@@ -120,17 +123,32 @@ jobs:
         if: steps.existing-pr.outputs.exists != 'true' && steps.changes.outputs.has_changes == 'true'
         shell: bash
         run: |
+          awk '
+            /^Planned dependency updates:/ { in_updates = 1; next }
+            in_updates && /^ - / { sub(/^ - /, "- "); print; next }
+            in_updates && NF == 0 { next }
+            in_updates { in_updates = 0 }
+          ' dependency-updates.log > dependency-updates.md
+
+          {
+            echo "Automated dependency version bump."
+            echo
+            echo "Updated dependencies:"
+            if [[ -s dependency-updates.md ]]; then
+              cat dependency-updates.md
+            else
+              echo "- No dependency update details were captured."
+            fi
+            echo
+            echo "Verification:"
+            echo '- `gradle buildReleaseJars --no-daemon --console=plain`'
+            echo
+            echo "This workflow will not create another dependency bump PR while this branch has an open PR."
+          } > pull-request-body.md
+
           gh pr create \
             --repo "${{ github.repository }}" \
             --base "${{ github.event.repository.default_branch }}" \
             --head "$BUMP_BRANCH" \
             --title "chore: bump dependency versions" \
-            --body "$(cat <<'EOF'
-          Automated dependency version bump.
-
-          Verification:
-          - `gradle buildReleaseJars --no-daemon --console=plain`
-
-          This workflow will not create another dependency bump PR while this branch has an open PR.
-          EOF
-          )"
+            --body-file pull-request-body.md
