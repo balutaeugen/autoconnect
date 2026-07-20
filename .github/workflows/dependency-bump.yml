@@ -62,18 +62,19 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Set up Gradle
-        if: steps.existing-pr.outputs.exists != 'true'
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: "9.5.0"
-
       - name: Update dependencies
         if: steps.existing-pr.outputs.exists != 'true'
+        id: update-dependencies
         shell: bash
         run: |
           set -o pipefail
           python .github/actions/dependency-bump/update_dependencies.py --skip-gradle-check | tee dependency-updates.log
+
+      - name: Set up Gradle
+        if: steps.existing-pr.outputs.exists != 'true'
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: ${{ steps.update-dependencies.outputs.gradle_version }}
 
       - name: Detect changes
         if: steps.existing-pr.outputs.exists != 'true'
@@ -102,6 +103,7 @@ jobs:
           git checkout -B "$BUMP_BRANCH"
           git add \
             gradle/autoconnect-metadata.json \
+            gradle/wrapper/gradle-wrapper.properties \
             gradle.properties \
             settings.gradle \
             fabric/fabric.gradle \
