@@ -8,7 +8,7 @@
     "fabricLoader": "0.19.3",
     "quiltConfig": "1.3.3",
     "quiltJson5": "1.0.4+final",
-    "quiltLoader": "0.30.0-beta.8",
+    "quiltLoader": "0.30.1-beta.2",
     "spongeMixin": "0.17.3+mixin.0.8.7"
   },
   "loaders": {
@@ -23,9 +23,9 @@
             "26.1.1",
             "26.1.2"
           ],
-          "modMenu": "18.0.0-beta.1",
-          "modMenuArtifact": "p7gjPPpV",
-          "modMenuDependency": ">=18.0.0-beta.1",
+          "modMenu": "18.0.0",
+          "modMenuArtifact": "3rsoV1bk",
+          "modMenuDependency": ">=18.0.0",
           "clothConfig": "26.1.154",
           "clothConfigDependency": ">=26.1.154"
         },
@@ -35,9 +35,9 @@
           "minecraftVersions": [
             "26.2"
           ],
-          "modMenu": "20.0.0-beta.4",
-          "modMenuArtifact": "3gAjUrx6",
-          "modMenuDependency": ">=20.0.0-beta.4",
+          "modMenu": "20.0.1",
+          "modMenuArtifact": "njXb639R",
+          "modMenuDependency": ">=20.0.1",
           "clothConfig": "26.2.155",
           "clothConfigDependency": ">=26.2.155"
         }
@@ -53,7 +53,7 @@
             "26.1.1",
             "26.1.2"
           ],
-          "forgeVersion": "64.0.11",
+          "forgeVersion": "64.0.12",
           "minecraftRange": "[26.1,26.1.2]",
           "forgeRange": "[62,)"
         },
@@ -62,7 +62,7 @@
           "minecraftVersions": [
             "26.2"
           ],
-          "forgeVersion": "65.0.3",
+          "forgeVersion": "65.0.6",
           "minecraftRange": "[26.2]",
           "forgeRange": "[65,)"
         }
@@ -78,18 +78,18 @@
             "26.1.1",
             "26.1.2"
           ],
-          "neoForgeVersion": "26.1.2.78",
+          "neoForgeVersion": "26.1.2.82",
           "minecraftRange": "[26.1,26.1.2]",
-          "neoForgeRange": "[26.1.2.78,)"
+          "neoForgeRange": "[26.1.2.82,)"
         },
         "26.2": {
           "minecraftLabel": "26.2",
           "minecraftVersions": [
             "26.2"
           ],
-          "neoForgeVersion": "26.2.0.8-beta",
+          "neoForgeVersion": "26.2.0.25-beta",
           "minecraftRange": "[26.2]",
-          "neoForgeRange": "[26.2.0.8-beta,)"
+          "neoForgeRange": "[26.2.0.25-beta,)"
         }
       }
     },
@@ -104,9 +104,9 @@
             "26.1.1",
             "26.1.2"
           ],
-          "modMenu": "18.0.0-beta.1",
-          "modMenuArtifact": "p7gjPPpV",
-          "modMenuDependency": ">=18.0.0-beta.1",
+          "modMenu": "18.0.0",
+          "modMenuArtifact": "3rsoV1bk",
+          "modMenuDependency": ">=18.0.0",
           "clothConfig": "26.1.154",
           "clothConfigDependency": ">=26.1.154"
         },
@@ -116,9 +116,9 @@
           "minecraftVersions": [
             "26.2"
           ],
-          "modMenu": "20.0.0-beta.4",
-          "modMenuArtifact": "3gAjUrx6",
-          "modMenuDependency": ">=20.0.0-beta.4",
+          "modMenu": "20.0.1",
+          "modMenuArtifact": "njXb639R",
+          "modMenuDependency": ">=20.0.1",
           "clothConfig": "26.2.155",
           "clothConfigDependency": ">=26.2.155"
         }

@@ -2,7 +2,7 @@ plugins {
     id 'java'
     id 'idea'
     id 'eclipse'
-    id 'net.neoforged.moddev' version '2.0.141'
+    id 'net.neoforged.moddev' version '2.0.142'
 }
 
 apply from: rootProject.file("neoforge/neoforge.gradle")
