@@ -20,6 +20,7 @@ URLS = {
     "fabric_loom": "https://maven.fabricmc.net/net/fabricmc/fabric-loom/net.fabricmc.fabric-loom.gradle.plugin/maven-metadata.xml",
     "sponge_mixin": "https://maven.fabricmc.net/net/fabricmc/sponge-mixin/maven-metadata.xml",
     "mod_menu": "https://maven.terraformersmc.com/releases/com/terraformersmc/modmenu/maven-metadata.xml",
+    "mod_menu_modrinth": "https://api.modrinth.com/v2/project/mOgUt4GM/version?include_changelog=false",
     "cloth_config": "https://maven.shedaniel.me/me/shedaniel/cloth/cloth-config-fabric/maven-metadata.xml",
     "forge": "https://maven.minecraftforge.net/net/minecraftforge/forge/maven-metadata.xml",
     "forge_gradle": "https://plugins.gradle.org/m2/net/minecraftforge/gradle/net.minecraftforge.gradle.gradle.plugin/maven-metadata.xml",
@@ -63,6 +64,23 @@ def gradle_release(url):
     if not version:
         raise RuntimeError(f"No Gradle version found in {url}")
     return version
+
+
+def modrinth_versions(url):
+    print(f"Reading {url}")
+    request = urllib.request.Request(url, headers={"User-Agent": "AutoConnect dependency updater"})
+    with urllib.request.urlopen(request, timeout=60) as response:
+        versions = json.load(response)
+    if not isinstance(versions, list):
+        raise RuntimeError(f"No Modrinth versions found in {url}")
+    return versions
+
+
+def modrinth_release(versions, version_number):
+    matches = [version for version in versions if version.get("version_number") == version_number]
+    if not matches:
+        raise RuntimeError(f"Mod Menu {version_number} has no Modrinth fallback artifact")
+    return {"version_number": version_number, "id": matches[0]["id"]}
 
 
 def version_sort_key(version):
@@ -134,6 +152,24 @@ def update_metadata_dependency_pair(metadata, loader, minecraft_version, version
     if old_dependency != new_dependency:
         target[dependency_key] = new_dependency
         CHANGES.append(f"gradle/autoconnect-metadata.json: {label} dependency {old_dependency} -> {new_dependency}")
+
+
+def update_mod_menu(metadata, loader, minecraft_version, release, label):
+    update_metadata_dependency_pair(
+        metadata,
+        loader,
+        minecraft_version,
+        "modMenu",
+        "modMenuDependency",
+        release["version_number"],
+        label,
+    )
+    update_metadata_path(
+        metadata,
+        ["loaders", loader, "targets", minecraft_version, "modMenuArtifact"],
+        release["id"],
+        f"{label} Modrinth artifact",
+    )
 
 
 def update_regex(relative_path, pattern, replacement, label, dry_run):
@@ -263,8 +299,11 @@ def main():
     neoforge_2612 = latest_matching(URLS["neoforge"], lambda version: version.startswith("26.1.2."))
     neoforge_262 = latest_matching(URLS["neoforge"], lambda version: version.startswith("26.2."))
 
-    mod_menu_18 = latest_matching(URLS["mod_menu"], lambda version: version.startswith("18."))
-    mod_menu_20 = latest_matching(URLS["mod_menu"], lambda version: version.startswith("20."))
+    mod_menu_18_version = latest_matching(URLS["mod_menu"], lambda version: version.startswith("18."))
+    mod_menu_20_version = latest_matching(URLS["mod_menu"], lambda version: version.startswith("20."))
+    mod_menu_modrinth_versions = modrinth_versions(URLS["mod_menu_modrinth"])
+    mod_menu_18 = modrinth_release(mod_menu_modrinth_versions, mod_menu_18_version)
+    mod_menu_20 = modrinth_release(mod_menu_modrinth_versions, mod_menu_20_version)
     cloth_261 = latest_matching(URLS["cloth_config"], lambda version: version.startswith("26.1."))
     cloth_262 = latest_matching(URLS["cloth_config"], lambda version: version.startswith("26.2."))
 
@@ -291,8 +330,8 @@ def main():
     update_gradle_plugin_version("settings.gradle", "org.gradle.toolchains.foojay-resolver-convention", foojay_resolver, "Foojay resolver", dry_run)
 
     update_regex("fabric/fabric.gradle", r"(classpath 'net\.fabricmc:fabric-loom:)[^']+'", lambda match: f"{match.group(1)}{fabric_loom}'", "Fabric Loom", dry_run)
-    update_metadata_dependency_pair(metadata, "fabric", "26.1.2", "modMenu", "modMenuDependency", mod_menu_18, "Fabric 26.1.x Mod Menu")
-    update_metadata_dependency_pair(metadata, "fabric", "26.2", "modMenu", "modMenuDependency", mod_menu_20, "Fabric 26.2 Mod Menu")
+    update_mod_menu(metadata, "fabric", "26.1.2", mod_menu_18, "Fabric 26.1.x Mod Menu")
+    update_mod_menu(metadata, "fabric", "26.2", mod_menu_20, "Fabric 26.2 Mod Menu")
     update_metadata_dependency_pair(metadata, "fabric", "26.1.2", "clothConfig", "clothConfigDependency", cloth_261, "Fabric 26.1.x Cloth Config")
     update_metadata_dependency_pair(metadata, "fabric", "26.2", "clothConfig", "clothConfigDependency", cloth_262, "Fabric 26.2 Cloth Config")
 
@@ -307,8 +346,8 @@ def main():
     update_gradle_plugin_version("neoforge/26.1.2/build.gradle", "net.neoforged.moddev", neoforge_moddev, "NeoForge ModDev", dry_run)
     update_gradle_plugin_version("neoforge/26.2/build.gradle", "net.neoforged.moddev", neoforge_moddev, "NeoForge ModDev", dry_run)
 
-    update_metadata_dependency_pair(metadata, "quilt", "26.1.2", "modMenu", "modMenuDependency", mod_menu_18, "Quilt 26.1.x Mod Menu")
-    update_metadata_dependency_pair(metadata, "quilt", "26.2", "modMenu", "modMenuDependency", mod_menu_20, "Quilt 26.2 Mod Menu")
+    update_mod_menu(metadata, "quilt", "26.1.2", mod_menu_18, "Quilt 26.1.x Mod Menu")
+    update_mod_menu(metadata, "quilt", "26.2", mod_menu_20, "Quilt 26.2 Mod Menu")
     update_metadata_dependency_pair(metadata, "quilt", "26.1.2", "clothConfig", "clothConfigDependency", cloth_261, "Quilt 26.1.x Cloth Config")
     update_metadata_dependency_pair(metadata, "quilt", "26.2", "clothConfig", "clothConfigDependency", cloth_262, "Quilt 26.2 Cloth Config")
     update_gradle_plugin_version("quilt/26.1.2/build.gradle", "org.quiltmc.loom", quilt_loom, "Quilt Loom", dry_run)

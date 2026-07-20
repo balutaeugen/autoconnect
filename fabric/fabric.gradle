@@ -76,6 +76,17 @@ repositories {
         name = "Terraformers"
         url = "https://maven.terraformersmc.com/releases/"
     }
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = "Modrinth"
+                url = "https://api.modrinth.com/maven"
+            }
+        }
+        filter {
+            includeGroup "maven.modrinth"
+        }
+    }
     maven {
         name = "Shedaniel"
         url = "https://maven.shedaniel.me/"
@@ -91,8 +102,13 @@ dependencies {
     }
 
     implementation "net.fabricmc:fabric-loader:${dependencyVersions.fabricLoader}"
-    modClientCompileOnly "com.terraformersmc:modmenu:${minecraftConfig.modMenu}"
-    modMenuRuntime("com.terraformersmc:modmenu:${minecraftConfig.modMenu}") {
+    def modMenuDependency = providers.gradleProperty("modMenuRepository")
+            .map { it == "modrinth" ? "maven.modrinth:mOgUt4GM:${minecraftConfig.modMenuArtifact}" : "com.terraformersmc:modmenu:${minecraftConfig.modMenu}" }
+            .getOrElse("com.terraformersmc:modmenu:${minecraftConfig.modMenu}")
+    modClientCompileOnly(modMenuDependency) {
+        transitive = false
+    }
+    modMenuRuntime(modMenuDependency) {
         transitive = false
     }
     clientCompileOnly("me.shedaniel.cloth:cloth-config-fabric:${minecraftConfig.clothConfig}") {

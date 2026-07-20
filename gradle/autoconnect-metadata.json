@@ -24,6 +24,7 @@
             "26.1.2"
           ],
           "modMenu": "18.0.0-beta.1",
+          "modMenuArtifact": "p7gjPPpV",
           "modMenuDependency": ">=18.0.0-beta.1",
           "clothConfig": "26.1.154",
           "clothConfigDependency": ">=26.1.154"
@@ -35,6 +36,7 @@
             "26.2"
           ],
           "modMenu": "20.0.0-beta.4",
+          "modMenuArtifact": "3gAjUrx6",
           "modMenuDependency": ">=20.0.0-beta.4",
           "clothConfig": "26.2.155",
           "clothConfigDependency": ">=26.2.155"
@@ -103,6 +105,7 @@
             "26.1.2"
           ],
           "modMenu": "18.0.0-beta.1",
+          "modMenuArtifact": "p7gjPPpV",
           "modMenuDependency": ">=18.0.0-beta.1",
           "clothConfig": "26.1.154",
           "clothConfigDependency": ">=26.1.154"
@@ -114,6 +117,7 @@
             "26.2"
           ],
           "modMenu": "20.0.0-beta.4",
+          "modMenuArtifact": "3gAjUrx6",
           "modMenuDependency": ">=20.0.0-beta.4",
           "clothConfig": "26.2.155",
           "clothConfigDependency": ">=26.2.155"

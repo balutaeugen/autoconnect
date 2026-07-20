@@ -59,6 +59,17 @@ repositories {
         name = "Terraformers"
         url = "https://maven.terraformersmc.com/releases/"
     }
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = "Modrinth"
+                url = "https://api.modrinth.com/maven"
+            }
+        }
+        filter {
+            includeGroup "maven.modrinth"
+        }
+    }
     maven {
         name = "Shedaniel"
         url = "https://maven.shedaniel.me/"
@@ -74,10 +85,13 @@ dependencies {
     }
 
     implementation "org.quiltmc:quilt-loader:${quiltLoaderVersion}"
-    compileOnly("com.terraformersmc:modmenu:${quiltTarget.modMenu}") {
+    def modMenuDependency = providers.gradleProperty("modMenuRepository")
+            .map { it == "modrinth" ? "maven.modrinth:mOgUt4GM:${quiltTarget.modMenuArtifact}" : "com.terraformersmc:modmenu:${quiltTarget.modMenu}" }
+            .getOrElse("com.terraformersmc:modmenu:${quiltTarget.modMenu}")
+    compileOnly(modMenuDependency) {
         transitive = false
     }
-    modMenuRuntime("com.terraformersmc:modmenu:${quiltTarget.modMenu}") {
+    modMenuRuntime(modMenuDependency) {
         transitive = false
     }
     clientCompileOnly("me.shedaniel.cloth:cloth-config-fabric:${quiltTarget.clothConfig}") {
