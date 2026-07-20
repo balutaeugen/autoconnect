@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[3]
 CHANGES = []
 
 URLS = {
+    "gradle": "https://services.gradle.org/versions/current",
     "fabric_loader": "https://maven.fabricmc.net/net/fabricmc/fabric-loader/maven-metadata.xml",
     "fabric_loom": "https://maven.fabricmc.net/net/fabricmc/fabric-loom/net.fabricmc.fabric-loom.gradle.plugin/maven-metadata.xml",
     "sponge_mixin": "https://maven.fabricmc.net/net/fabricmc/sponge-mixin/maven-metadata.xml",
@@ -52,6 +53,16 @@ def maven_release(url):
     if not release:
         raise RuntimeError(f"No release/latest version found in {url}")
     return release
+
+
+def gradle_release(url):
+    print(f"Reading {url}")
+    request = urllib.request.Request(url, headers={"User-Agent": "AutoConnect dependency updater"})
+    with urllib.request.urlopen(request, timeout=60) as response:
+        version = json.load(response).get("version")
+    if not version:
+        raise RuntimeError(f"No Gradle version found in {url}")
+    return version
 
 
 def version_sort_key(version):
@@ -134,7 +145,7 @@ def update_regex(relative_path, pattern, replacement, label, dry_run):
     new_value = replacement(match)
     updated = re.sub(pattern, lambda item: replacement(item), text, count=1)
     if updated != text:
-        old_value = match.group(match.lastindex or 0)
+        old_value = match.group(0)
         CHANGES.append(f"{relative_path}: {label} {old_value} -> {new_value}")
         write_text(relative_path, updated, dry_run)
 
@@ -215,6 +226,13 @@ def run_gradle_check():
     subprocess.run([command, "help", "--no-daemon", "--console=plain"], cwd=ROOT, check=True)
 
 
+def write_github_output(name, value):
+    output_path = os.environ.get("GITHUB_OUTPUT")
+    if output_path:
+        with open(output_path, "a", encoding="utf-8") as output:
+            output.write(f"{name}={value}\n")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Update tracked Minecraft mod dependency versions.")
     parser.add_argument("--dry-run", action="store_true", help="Print proposed updates without changing files.")
@@ -223,6 +241,7 @@ def main():
 
     print("Checking dependency metadata...")
 
+    gradle = gradle_release(URLS["gradle"])
     fabric_loader = maven_release(URLS["fabric_loader"])
     fabric_loom = maven_release(URLS["fabric_loom"])
     sponge_mixin = maven_release(URLS["sponge_mixin"])
@@ -251,6 +270,15 @@ def main():
 
     dry_run = args.dry_run
     metadata = read_project_metadata()
+
+    update_regex(
+        "gradle/wrapper/gradle-wrapper.properties",
+        r"(distributionUrl=https\\://services\.gradle\.org/distributions/gradle-)[^-]+(-bin\.zip)",
+        lambda match: f"{match.group(1)}{gradle}{match.group(2)}",
+        "Gradle",
+        dry_run,
+    )
+    write_github_output("gradle_version", gradle)
 
     update_metadata_path(metadata, ["dependencyVersions", "fabricLoader"], fabric_loader, "Fabric loader")
     update_metadata_path(metadata, ["dependencyVersions", "spongeMixin"], sponge_mixin, "Sponge Mixin")
