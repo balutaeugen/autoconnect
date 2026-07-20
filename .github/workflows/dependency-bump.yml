@@ -94,20 +94,35 @@ jobs:
         if: steps.existing-pr.outputs.exists != 'true' && steps.changes.outputs.has_changes == 'true'
         shell: bash
         run: |
-          for attempt in {1..5}; do
-            echo "Release build attempt $attempt of 5"
+          for attempt in {1..3}; do
+            echo "Terraformers release build attempt $attempt of 3"
             if gradle buildReleaseJars --no-daemon --console=plain; then
               exit 0
             fi
 
-            if [[ "$attempt" -lt 5 ]]; then
+            if [[ "$attempt" -lt 3 ]]; then
               delay=$((attempt * 15))
               echo "Release build failed; retrying in ${delay}s."
               sleep "$delay"
             fi
           done
 
-          echo "Release build failed after 5 attempts."
+          echo "Terraformers failed after 3 attempts; switching Mod Menu to Modrinth Maven."
+
+          for attempt in {1..3}; do
+            echo "Modrinth fallback build attempt $attempt of 3"
+            if gradle buildReleaseJars -PmodMenuRepository=modrinth --no-daemon --console=plain; then
+              exit 0
+            fi
+
+            if [[ "$attempt" -lt 3 ]]; then
+              delay=$((attempt * 15))
+              echo "Modrinth fallback build failed; retrying in ${delay}s."
+              sleep "$delay"
+            fi
+          done
+
+          echo "Release build failed after 3 Terraformers attempts and 3 Modrinth attempts."
           exit 1
 
       - name: Create dependency bump branch
