@@ -86,7 +86,7 @@ public final class AutoConnectState {
         }
 
         Minecraft minecraft = Minecraft.getInstance();
-        ServerData target = new ServerData("AutoConnect", configuredAddress, ServerData.Type.OTHER);
+        ServerData target = new ServerData(configuredAddress, configuredAddress, ServerData.Type.OTHER);
         ServerAddress address = ServerAddress.parseString(target.ip);
         attemptCounter.recordAttempt();
         beginConnectionAttempt(attemptCounter, automaticRetryAllowed);
