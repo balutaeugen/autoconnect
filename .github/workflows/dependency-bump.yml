@@ -92,7 +92,23 @@ jobs:
 
       - name: Build release jars
         if: steps.existing-pr.outputs.exists != 'true' && steps.changes.outputs.has_changes == 'true'
-        run: gradle buildReleaseJars --no-daemon --console=plain
+        shell: bash
+        run: |
+          for attempt in {1..5}; do
+            echo "Release build attempt $attempt of 5"
+            if gradle buildReleaseJars --no-daemon --console=plain; then
+              exit 0
+            fi
+
+            if [[ "$attempt" -lt 5 ]]; then
+              delay=$((attempt * 15))
+              echo "Release build failed; retrying in ${delay}s."
+              sleep "$delay"
+            fi
+          done
+
+          echo "Release build failed after 5 attempts."
+          exit 1
 
       - name: Create dependency bump branch
         if: steps.existing-pr.outputs.exists != 'true' && steps.changes.outputs.has_changes == 'true'
