@@ -63,10 +63,18 @@ jobs:
           distribution: temurin
           java-version: "25"
 
+      - name: Read Gradle version
+        id: gradle-version
+        shell: bash
+        run: |
+          version="$(sed -n 's/^distributionUrl=.*gradle-\([^-]*\)-bin\.zip$/\1/p' gradle/wrapper/gradle-wrapper.properties)"
+          test -n "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "9.5.0"
+          gradle-version: ${{ steps.gradle-version.outputs.version }}
 
       - name: Increment release version
         id: version
@@ -133,10 +141,18 @@ jobs:
           distribution: temurin
           java-version: "25"
 
+      - name: Read Gradle version
+        id: gradle-version
+        shell: bash
+        run: |
+          version="$(sed -n 's/^distributionUrl=.*gradle-\([^-]*\)-bin\.zip$/\1/p' gradle/wrapper/gradle-wrapper.properties)"
+          test -n "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "9.5.0"
+          gradle-version: ${{ steps.gradle-version.outputs.version }}
 
       - name: Prepare changelog
         env:
@@ -156,7 +172,7 @@ jobs:
           PY
 
       - name: Build publish artifacts
-        run: gradle preparePublishArtifacts --no-daemon --console=plain
+        run: bash .github/scripts/gradle-with-modmenu-fallback.sh preparePublishArtifacts
 
       - name: Validate publish artifacts
         env:
