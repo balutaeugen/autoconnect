@@ -23,9 +23,9 @@
             "26.1.1",
             "26.1.2"
           ],
-          "modMenu": "18.0.0",
-          "modMenuArtifact": "3rsoV1bk",
-          "modMenuDependency": ">=18.0.0",
+          "modMenu": "18.0.0-beta.1",
+          "modMenuArtifact": "p7gjPPpV",
+          "modMenuDependency": ">=18.0.0-beta.1",
           "clothConfig": "26.1.154",
           "clothConfigDependency": ">=26.1.154"
         },
@@ -35,9 +35,9 @@
           "minecraftVersions": [
             "26.2"
           ],
-          "modMenu": "20.0.1",
-          "modMenuArtifact": "njXb639R",
-          "modMenuDependency": ">=20.0.1",
+          "modMenu": "20.0.0-beta.2",
+          "modMenuArtifact": "TLnEHUyx",
+          "modMenuDependency": ">=20.0.0-beta.2",
           "clothConfig": "26.2.155",
           "clothConfigDependency": ">=26.2.155"
         }
@@ -53,7 +53,7 @@
             "26.1.1",
             "26.1.2"
           ],
-          "forgeVersion": "64.0.12",
+          "forgeVersion": "64.0.14",
           "minecraftRange": "[26.1,26.1.2]",
           "forgeRange": "[62,)"
         },
@@ -62,7 +62,7 @@
           "minecraftVersions": [
             "26.2"
           ],
-          "forgeVersion": "65.0.6",
+          "forgeVersion": "65.0.9",
           "minecraftRange": "[26.2]",
           "forgeRange": "[65,)"
         }
@@ -78,18 +78,18 @@
             "26.1.1",
             "26.1.2"
           ],
-          "neoForgeVersion": "26.1.2.82",
+          "neoForgeVersion": "26.1.2.87",
           "minecraftRange": "[26.1,26.1.2]",
-          "neoForgeRange": "[26.1.2.82,)"
+          "neoForgeRange": "[26.1.2.87,)"
         },
         "26.2": {
           "minecraftLabel": "26.2",
           "minecraftVersions": [
             "26.2"
           ],
-          "neoForgeVersion": "26.2.0.25-beta",
+          "neoForgeVersion": "26.2.0.35-beta",
           "minecraftRange": "[26.2]",
-          "neoForgeRange": "[26.2.0.25-beta,)"
+          "neoForgeRange": "[26.2.0.35-beta,)"
         }
       }
     },
@@ -104,9 +104,9 @@
             "26.1.1",
             "26.1.2"
           ],
-          "modMenu": "18.0.0",
-          "modMenuArtifact": "3rsoV1bk",
-          "modMenuDependency": ">=18.0.0",
+          "modMenu": "18.0.0-beta.1",
+          "modMenuArtifact": "p7gjPPpV",
+          "modMenuDependency": ">=18.0.0-beta.1",
           "clothConfig": "26.1.154",
           "clothConfigDependency": ">=26.1.154"
         },
@@ -116,9 +116,9 @@
           "minecraftVersions": [
             "26.2"
           ],
-          "modMenu": "20.0.1",
-          "modMenuArtifact": "njXb639R",
-          "modMenuDependency": ">=20.0.1",
+          "modMenu": "20.0.0-beta.2",
+          "modMenuArtifact": "TLnEHUyx",
+          "modMenuDependency": ">=20.0.0-beta.2",
           "clothConfig": "26.2.155",
           "clothConfigDependency": ">=26.2.155"
         }
