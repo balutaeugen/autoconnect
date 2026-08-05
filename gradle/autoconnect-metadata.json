@@ -53,7 +53,7 @@
             "26.1.1",
             "26.1.2"
           ],
-          "forgeVersion": "64.0.12",
+          "forgeVersion": "64.1.0",
           "minecraftRange": "[26.1,26.1.2]",
           "forgeRange": "[62,)"
         },
@@ -62,7 +62,7 @@
           "minecraftVersions": [
             "26.2"
           ],
-          "forgeVersion": "65.0.6",
+          "forgeVersion": "65.1.0",
           "minecraftRange": "[26.2]",
           "forgeRange": "[65,)"
         }
@@ -78,18 +78,18 @@
             "26.1.1",
             "26.1.2"
           ],
-          "neoForgeVersion": "26.1.2.82",
+          "neoForgeVersion": "26.1.2.94",
           "minecraftRange": "[26.1,26.1.2]",
-          "neoForgeRange": "[26.1.2.82,)"
+          "neoForgeRange": "[26.1.2.94,)"
         },
         "26.2": {
           "minecraftLabel": "26.2",
           "minecraftVersions": [
             "26.2"
           ],
-          "neoForgeVersion": "26.2.0.25-beta",
+          "neoForgeVersion": "26.2.0.43-beta",
           "minecraftRange": "[26.2]",
-          "neoForgeRange": "[26.2.0.25-beta,)"
+          "neoForgeRange": "[26.2.0.43-beta,)"
         }
       }
     },
