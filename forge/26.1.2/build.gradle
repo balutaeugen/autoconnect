@@ -2,7 +2,7 @@ plugins {
     id 'java'
     id 'idea'
     id 'eclipse'
-    id 'net.minecraftforge.gradle' version '[7.0.31,8.0)'
+    id 'net.minecraftforge.gradle' version '[7.0.34,8.0)'
 }
 
 apply from: rootProject.file("forge/forge.gradle")

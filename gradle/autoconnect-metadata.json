@@ -87,9 +87,9 @@
           "minecraftVersions": [
             "26.2"
           ],
-          "neoForgeVersion": "26.2.0.43-beta",
+          "neoForgeVersion": "26.2.0.57",
           "minecraftRange": "[26.2]",
-          "neoForgeRange": "[26.2.0.43-beta,)"
+          "neoForgeRange": "[26.2.0.57,)"
         }
       }
     },
