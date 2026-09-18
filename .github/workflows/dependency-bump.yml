@@ -107,15 +107,6 @@ jobs:
             gradle.properties \
             settings.gradle \
             fabric/fabric.gradle \
-            forge/forge.gradle \
-            forge/26.1.2/build.gradle \
-            forge/26.2/build.gradle \
-            neoforge/neoforge.gradle \
-            neoforge/26.1.2/build.gradle \
-            neoforge/26.2/build.gradle \
-            quilt/quilt.gradle \
-            quilt/26.1.2/build.gradle \
-            quilt/26.2/build.gradle \
             .github/actions/dependency-bump/update_dependencies.py \
             README.md
           git commit -m "chore: bump dependency versions"

@@ -18,15 +18,6 @@ ext.autoconnectLoaderTarget = { String loader, String minecraftVersion ->
     return target
 }
 
-ext.autoconnectMinecraftVersionFromProject = { String loader, String projectName ->
-    def prefix = "${loader}-"
-    if (!projectName.startsWith(prefix)) {
-        throw new GradleException("Project ${projectName} is not a ${loader} target.")
-    }
-
-    return projectName.substring(prefix.length())
-}
-
 ext.configureAutoconnectJava = { Project targetProject ->
     def targetJavaVersion = autoconnectMetadata().javaVersion as int
 

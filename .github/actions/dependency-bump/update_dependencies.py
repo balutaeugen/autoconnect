@@ -22,14 +22,6 @@ URLS = {
     "mod_menu": "https://maven.terraformersmc.com/releases/com/terraformersmc/modmenu/maven-metadata.xml",
     "mod_menu_modrinth": "https://api.modrinth.com/v2/project/mOgUt4GM/version?include_changelog=false",
     "cloth_config": "https://maven.shedaniel.me/me/shedaniel/cloth/cloth-config-fabric/maven-metadata.xml",
-    "forge": "https://maven.minecraftforge.net/net/minecraftforge/forge/maven-metadata.xml",
-    "forge_gradle": "https://plugins.gradle.org/m2/net/minecraftforge/gradle/net.minecraftforge.gradle.gradle.plugin/maven-metadata.xml",
-    "neoforge": "https://maven.neoforged.net/releases/net/neoforged/neoforge/maven-metadata.xml",
-    "neoforge_moddev": "https://maven.neoforged.net/releases/net/neoforged/moddev/net.neoforged.moddev.gradle.plugin/maven-metadata.xml",
-    "quilt_loader": "https://maven.quiltmc.org/repository/release/org/quiltmc/quilt-loader/maven-metadata.xml",
-    "quilt_loom": "https://maven.quiltmc.org/repository/release/org/quiltmc/loom/org.quiltmc.loom.gradle.plugin/maven-metadata.xml",
-    "quilt_config": "https://maven.quiltmc.org/repository/release/org/quiltmc/quilt-config/maven-metadata.xml",
-    "quilt_json5": "https://maven.quiltmc.org/repository/release/org/quiltmc/quilt-json5/maven-metadata.xml",
     "asm": "https://repo1.maven.org/maven2/org/ow2/asm/asm/maven-metadata.xml",
     "stonecutter": "https://plugins.gradle.org/m2/dev/kikugie/stonecutter/dev.kikugie.stonecutter.gradle.plugin/maven-metadata.xml",
     "foojay_resolver": "https://plugins.gradle.org/m2/org/gradle/toolchains/foojay-resolver-convention/org.gradle.toolchains.foojay-resolver-convention.gradle.plugin/maven-metadata.xml",
@@ -208,35 +200,6 @@ def update_gradle_plugin_version(relative_path, plugin_id, new_version, label, d
     raise RuntimeError(f"Could not find Gradle plugin {plugin_id} in {relative_path}")
 
 
-def update_gradle_plugin_minimum(relative_path, plugin_id, new_minimum, label, dry_run):
-    text = read_text(relative_path)
-    lines = text.splitlines(keepends=True)
-    prefix_pattern = re.compile(
-        rf"^(\s*id\s+['\"]{re.escape(plugin_id)}['\"]\s+version\s+['\"]\[)([^,]+)(,[^)]+\)['\"].*)$"
-    )
-
-    for index, line in enumerate(lines):
-        match = prefix_pattern.match(line.rstrip("\r\n"))
-        if not match:
-            continue
-
-        old_minimum = match.group(2)
-        updated_line = f"{match.group(1)}{new_minimum}{match.group(3)}"
-        newline = "\r\n" if line.endswith("\r\n") else "\n" if line.endswith("\n") else ""
-        if old_minimum != new_minimum:
-            lines[index] = updated_line + newline
-            CHANGES.append(f"{relative_path}: {label} {old_minimum} -> {new_minimum}")
-            write_text(relative_path, "".join(lines), dry_run)
-        return
-
-    raise RuntimeError(f"Could not find Gradle plugin range for {plugin_id} in {relative_path}")
-
-
-def update_gradle_plugin_range(relative_paths, plugin_id, new_version, dry_run):
-    for relative_path in relative_paths:
-        update_gradle_plugin_minimum(relative_path, plugin_id, new_version, f"{plugin_id} minimum", dry_run)
-
-
 def gradle_command():
     explicit = os.environ.get("GRADLE_CMD")
     if explicit:
@@ -284,28 +247,8 @@ def main():
     asm = maven_release(URLS["asm"])
     stonecutter = maven_release(URLS["stonecutter"])
     foojay_resolver = maven_release(URLS["foojay_resolver"])
-    forge_gradle = maven_release(URLS["forge_gradle"])
-    neoforge_moddev = maven_release(URLS["neoforge_moddev"])
-    quilt_loader = maven_release(URLS["quilt_loader"])
-    quilt_loom = maven_release(URLS["quilt_loom"])
-    quilt_config = maven_release(URLS["quilt_config"])
-    quilt_json5 = maven_release(URLS["quilt_json5"])
 
-    forge_2612 = latest_matching(URLS["forge"], lambda version: version.startswith("26.1.2-"))
-    forge_262 = latest_matching(URLS["forge"], lambda version: version.startswith("26.2-"))
-    forge_2612_loader = re.sub(r"^26\.1\.2-", "", forge_2612)
-    forge_262_loader = re.sub(r"^26\.2-", "", forge_262)
-
-    neoforge_2612 = latest_matching(URLS["neoforge"], lambda version: version.startswith("26.1.2."))
-    neoforge_262 = latest_matching(URLS["neoforge"], lambda version: version.startswith("26.2."))
-
-    mod_menu_18_version = latest_matching(URLS["mod_menu"], lambda version: version.startswith("18."))
-    mod_menu_20_version = latest_matching(URLS["mod_menu"], lambda version: version.startswith("20."))
     mod_menu_modrinth_versions = modrinth_versions(URLS["mod_menu_modrinth"])
-    mod_menu_18 = modrinth_release(mod_menu_modrinth_versions, mod_menu_18_version)
-    mod_menu_20 = modrinth_release(mod_menu_modrinth_versions, mod_menu_20_version)
-    cloth_261 = latest_matching(URLS["cloth_config"], lambda version: version.startswith("26.1."))
-    cloth_262 = latest_matching(URLS["cloth_config"], lambda version: version.startswith("26.2."))
 
     dry_run = args.dry_run
     metadata = read_project_metadata()
@@ -322,36 +265,22 @@ def main():
     update_metadata_path(metadata, ["dependencyVersions", "fabricLoader"], fabric_loader, "Fabric loader")
     update_metadata_path(metadata, ["dependencyVersions", "spongeMixin"], sponge_mixin, "Sponge Mixin")
     update_metadata_path(metadata, ["dependencyVersions", "asm"], asm, "ASM")
-    update_metadata_path(metadata, ["dependencyVersions", "quiltLoader"], quilt_loader, "Quilt loader")
-    update_metadata_path(metadata, ["dependencyVersions", "quiltJson5"], quilt_json5, "Quilt JSON5")
-    update_metadata_path(metadata, ["dependencyVersions", "quiltConfig"], quilt_config, "Quilt Config")
 
     update_gradle_plugin_version("settings.gradle", "dev.kikugie.stonecutter", stonecutter, "Stonecutter", dry_run)
     update_gradle_plugin_version("settings.gradle", "org.gradle.toolchains.foojay-resolver-convention", foojay_resolver, "Foojay resolver", dry_run)
 
     update_regex("fabric/fabric.gradle", r"(classpath 'net\.fabricmc:fabric-loom:)[^']+'", lambda match: f"{match.group(1)}{fabric_loom}'", "Fabric Loom", dry_run)
-    update_mod_menu(metadata, "fabric", "26.1.2", mod_menu_18, "Fabric 26.1.x Mod Menu")
-    update_mod_menu(metadata, "fabric", "26.2", mod_menu_20, "Fabric 26.2 Mod Menu")
-    update_metadata_dependency_pair(metadata, "fabric", "26.1.2", "clothConfig", "clothConfigDependency", cloth_261, "Fabric 26.1.x Cloth Config")
-    update_metadata_dependency_pair(metadata, "fabric", "26.2", "clothConfig", "clothConfigDependency", cloth_262, "Fabric 26.2 Cloth Config")
-
-    update_metadata_path(metadata, ["loaders", "forge", "targets", "26.1.2", "forgeVersion"], forge_2612_loader, "Forge 26.1.2")
-    update_metadata_path(metadata, ["loaders", "forge", "targets", "26.2", "forgeVersion"], forge_262_loader, "Forge 26.2")
-    update_gradle_plugin_range(["forge/26.1.2/build.gradle", "forge/26.2/build.gradle"], "net.minecraftforge.gradle", forge_gradle, dry_run)
-
-    update_metadata_path(metadata, ["loaders", "neoforge", "targets", "26.1.2", "neoForgeVersion"], neoforge_2612, "NeoForge 26.1.2")
-    update_metadata_path(metadata, ["loaders", "neoforge", "targets", "26.2", "neoForgeVersion"], neoforge_262, "NeoForge 26.2")
-    update_metadata_path(metadata, ["loaders", "neoforge", "targets", "26.1.2", "neoForgeRange"], f"[{neoforge_2612},)", "NeoForge 26.1.2 range")
-    update_metadata_path(metadata, ["loaders", "neoforge", "targets", "26.2", "neoForgeRange"], f"[{neoforge_262},)", "NeoForge 26.2 range")
-    update_gradle_plugin_version("neoforge/26.1.2/build.gradle", "net.neoforged.moddev", neoforge_moddev, "NeoForge ModDev", dry_run)
-    update_gradle_plugin_version("neoforge/26.2/build.gradle", "net.neoforged.moddev", neoforge_moddev, "NeoForge ModDev", dry_run)
-
-    update_mod_menu(metadata, "quilt", "26.1.2", mod_menu_18, "Quilt 26.1.x Mod Menu")
-    update_mod_menu(metadata, "quilt", "26.2", mod_menu_20, "Quilt 26.2 Mod Menu")
-    update_metadata_dependency_pair(metadata, "quilt", "26.1.2", "clothConfig", "clothConfigDependency", cloth_261, "Quilt 26.1.x Cloth Config")
-    update_metadata_dependency_pair(metadata, "quilt", "26.2", "clothConfig", "clothConfigDependency", cloth_262, "Quilt 26.2 Cloth Config")
-    update_gradle_plugin_version("quilt/26.1.2/build.gradle", "org.quiltmc.loom", quilt_loom, "Quilt Loom", dry_run)
-    update_gradle_plugin_version("quilt/26.2/build.gradle", "org.quiltmc.loom", quilt_loom, "Quilt Loom", dry_run)
+    for minecraft_version in metadata["loaders"]["fabric"]["targets"]:
+        label = f"Fabric {minecraft_version}"
+        compatible = [release for release in mod_menu_modrinth_versions
+                      if minecraft_version in release.get("game_versions", [])
+                      and "fabric" in release.get("loaders", [])]
+        if not compatible:
+            raise RuntimeError(f"No compatible Mod Menu release for {label}")
+        release = max(compatible, key=lambda item: version_sort_key(item["version_number"]))
+        update_mod_menu(metadata, "fabric", minecraft_version, release, f"{label} Mod Menu")
+        cloth = latest_matching(URLS["cloth_config"], lambda version: version.startswith(f"{minecraft_version}."))
+        update_metadata_dependency_pair(metadata, "fabric", minecraft_version, "clothConfig", "clothConfigDependency", cloth, f"{label} Cloth Config")
 
     write_metadata(metadata, dry_run)
 

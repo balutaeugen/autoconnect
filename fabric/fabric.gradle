@@ -213,36 +213,6 @@ if (!rootProject.ext.has("minecraftVersionAliasesRegistered")) {
         }
     }
 
-    releaseLoaders.neoforge.targets.each { mcVersion, mcConfig ->
-        def taskSuffix = mcVersion.replace(".", "_")
-        rootProject.tasks.register("buildNeoForge${taskSuffix}") {
-            group = minecraftVersionTaskGroup
-            description = "Builds the NeoForge mod for Minecraft ${mcVersion}."
-            dependsOn ":neoforge-${mcVersion}:build"
-        }
-
-        rootProject.tasks.register("launchNeoForge${taskSuffix}") {
-            group = minecraftVersionTaskGroup
-            description = "Launches the NeoForge client for Minecraft ${mcVersion}."
-            dependsOn ":neoforge-${mcVersion}:runClient"
-        }
-    }
-
-    releaseLoaders.quilt.targets.each { mcVersion, mcConfig ->
-        def taskSuffix = mcVersion.replace(".", "_")
-        rootProject.tasks.register("buildQuilt${taskSuffix}") {
-            group = minecraftVersionTaskGroup
-            description = "Builds the Quilt mod for Minecraft ${mcVersion}."
-            dependsOn ":quilt-${mcVersion}:build"
-        }
-
-        rootProject.tasks.register("launchQuilt${taskSuffix}") {
-            group = minecraftVersionTaskGroup
-            description = "Launches the Quilt client for Minecraft ${mcVersion}."
-            dependsOn ":quilt-${mcVersion}:runClient"
-        }
-    }
-
     rootProject.tasks.register("checkAllMinecraftVersions") {
         group = minecraftVersionTaskGroup
         description = "Builds every Fabric Stonecutter Minecraft version."
@@ -253,11 +223,6 @@ if (!rootProject.ext.has("minecraftVersionAliasesRegistered")) {
         group = minecraftVersionTaskGroup
         description = "Builds and collects the uploadable release jars."
         dependsOn rootProject.tasks.named("checkAllMinecraftVersions")
-        releaseLoaders.each { loader, loaderConfig ->
-            if (loader != "fabric") {
-                dependsOn loaderConfig.targets.keySet().collect { ":${loader}-${it}:build" }
-            }
-        }
         into rootProject.layout.buildDirectory.dir("libs")
 
         doFirst {
@@ -350,9 +315,12 @@ if (!rootProject.ext.has("minecraftVersionAliasesRegistered")) {
                 .unique()
                 .collect { "`${it}`" }
                 .join(", ")
-        def compatibilitySection = """AutoConnect supports Minecraft ${compatibilityVersions}.
-
-The `26.1.2` builds are used for the `26.1` compatibility range, because the mod has been tested across `26.1`, `26.1.1`, and `26.1.2` with the same compiled output."""
+        def loaderCompatibility = releaseLoaders.collect { loader, loaderConfig ->
+            def versions = loaderConfig.targets.values().collectMany { it.minecraftVersions }.unique()
+                    .collect { "`${it}`" }.join(", ")
+            "- ${loaderConfig.displayName}: ${versions}"
+        }.join("\n")
+        def compatibilitySection = "AutoConnect supports Minecraft ${compatibilityVersions}.\n\n${loaderCompatibility}"
 
         def artifactExamples = releaseLoaders.collectMany { loader, loaderConfig ->
             loaderConfig.targets.collect { mcVersion, mcConfig ->
