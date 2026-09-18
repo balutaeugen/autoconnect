@@ -1,6 +1,6 @@
 # AutoConnect
 
-AutoConnect is a lightweight client-side mod that joins your saved multiplayer server when you open the Multiplayer screen.
+AutoConnect is a lightweight client-side Fabric mod that joins your saved multiplayer server when you open the Multiplayer screen.
 
 It is useful if you usually play on the same server and want to skip opening the server list, selecting the server, and pressing Join every time. The server address can be entered manually, or updated automatically when you join a server from the normal multiplayer list.
 
@@ -16,9 +16,13 @@ AutoConnect only changes the client-side connection flow. It does not bypass aut
 - Adds a Reconnect button to failed connection screens
 - Client-side only
 
+## Compatibility
+
+Current releases support Minecraft **26.2** and **26.3** with **Fabric Loader** only. Minecraft 26.1.x, Forge, NeoForge, and Quilt are no longer supported.
+
 ## Configuration
 
-AutoConnect can be configured in-game where a config screen is available.
+AutoConnect can be configured in-game when Mod Menu and Cloth Config are installed.
 
 The config file can also be edited directly:
 
@@ -38,12 +42,8 @@ config/autoconnect.json
 
 ## Dependencies
 
-**Fabric**
-
+- Fabric Loader (Required)
 - Mod Menu (Optional)
 - Cloth Config (Optional)
 
-**Quilt**
-
-- Mod Menu (Optional)
-- Cloth Config (Optional)
+Install both Mod Menu and Cloth Config to access the in-game configuration screen. Fabric API is not required.

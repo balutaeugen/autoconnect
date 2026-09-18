@@ -1,8 +1,0 @@
-plugins {
-    id 'java'
-    id 'idea'
-    id 'eclipse'
-    id 'org.quiltmc.loom' version '1.15.1'
-}
-
-apply from: rootProject.file("quilt/quilt.gradle")

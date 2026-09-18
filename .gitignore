@@ -5,7 +5,7 @@ build/
 **/build/
 run/
 **/run/
-quilt/*/.gradle/
+**/.gradle/
 publish/
 **/publish/
 !.github/actions/publish/

@@ -1,6 +1,6 @@
 # AutoConnect
 
-AutoConnect is a lightweight client-side Minecraft mod that automatically joins a saved multiplayer server when you open the Multiplayer screen.
+AutoConnect is a lightweight client-side Fabric mod that automatically joins a saved multiplayer server when you open the Multiplayer screen.
 
 It is useful if you usually play on the same server and want to skip opening the server list, selecting the server, and pressing Join every time. The server address can be set manually, or updated automatically when you join a server from the normal multiplayer list.
 
@@ -16,7 +16,7 @@ AutoConnect only changes the client-side connection flow. It does not bypass aut
 - Configurable retry count and retry delay
 - Adds a Reconnect button to failed connection screens
 - Client-side only
-- Supports Fabric, Forge, NeoForge, and Quilt
+- Supports Fabric
 
 ## Settings
 
@@ -36,12 +36,7 @@ If retries are enabled and another retry is available, the disconnect screen als
 
 ## Configuration
 
-AutoConnect can be configured in-game where supported:
-
-- Fabric: through Mod Menu when Mod Menu and Cloth Config are installed
-- Forge: through the built-in mod list/config screen
-- NeoForge: through the built-in mod list/config screen
-- Quilt: through Mod Menu when Mod Menu and Cloth Config are installed
+AutoConnect can be configured in-game through Mod Menu when Mod Menu and Cloth Config are installed.
 
 The config file can also be edited directly:
 
@@ -52,17 +47,12 @@ config/autoconnect.json
 ## Compatibility
 
 <!-- autoconnect:compatibility:start -->
-AutoConnect supports Minecraft `26.1`, `26.1.1`, `26.1.2`, `26.2`.
+AutoConnect supports Minecraft `26.2`, `26.3`.
 
-The `26.1.2` builds are used for the `26.1` compatibility range, because the mod has been tested across `26.1`, `26.1.1`, and `26.1.2` with the same compiled output.
+- Fabric: `26.2`, `26.3`
 <!-- autoconnect:compatibility:end -->
 
-Supported loaders:
-
-- Fabric
-- Forge
-- NeoForge
-- Quilt
+Current releases support Fabric only. Minecraft 26.1.x, Forge, NeoForge, and Quilt are no longer supported.
 
 ## Downloads
 
@@ -71,7 +61,7 @@ Supported loaders:
 
 ## Optional Dependencies
 
-Fabric and Quilt users can install Mod Menu for an in-game configuration entry. Both Fabric and Quilt use Cloth Config for the Mod Menu configuration screen.
+Install Mod Menu and Cloth Config to access the in-game configuration screen.
 
 AutoConnect does not require Fabric API.
 
@@ -80,13 +70,7 @@ AutoConnect does not require Fabric API.
 ```text
 src/common/      Shared AutoConnect logic and config code
 src/fabric/      Fabric entrypoints, metadata, and integration code
-src/forge/       Forge entrypoints, metadata, and integration code
-src/neoforge/    NeoForge entrypoints, metadata, and integration code
-src/quilt/       Quilt entrypoints, metadata, and integration code
 versions/        Fabric Stonecutter projects
-forge/           Forge version projects
-neoforge/        NeoForge version projects
-quilt/           Quilt version projects
 publish/         Generated upload jars, ignored by Git
 ```
 
@@ -104,34 +88,23 @@ The generated release jars are named with the loader first, then the mod version
 
 ```text
 <!-- autoconnect:artifact-examples:start -->
-autoconnect-fabric-26.7.1-26.1-26.1.2.jar
 autoconnect-fabric-26.7.1-26.2.jar
-autoconnect-forge-26.7.1-26.1-26.1.2.jar
-autoconnect-forge-26.7.1-26.2.jar
-autoconnect-neoforge-26.7.1-26.1-26.1.2.jar
-autoconnect-neoforge-26.7.1-26.2.jar
-autoconnect-quilt-26.7.1-26.1-26.1.2.jar
-autoconnect-quilt-26.7.1-26.2.jar
+autoconnect-fabric-26.7.1-26.3.jar
 <!-- autoconnect:artifact-examples:end -->
 ```
 
 ## Local Testing
 
-Launch a specific loader and Minecraft version:
+Launch Fabric for a supported Minecraft version:
 
 ```sh
-gradle launchFabric26_2
-gradle launchNeoForge26_2
-gradle launchQuilt26_2
+gradle launchFabric26_3
 ```
 
 Build and launch from a specific subproject:
 
 ```sh
-gradle :fabric-26.2:buildJarAndRunClient
-gradle :forge-26.2:buildJarAndRunClient
-gradle :neoforge-26.2:buildJarAndRunClient
-gradle :quilt-26.2:buildJarAndRunClient
+gradle :fabric-26.3:buildJarAndRunClient
 ```
 
 Print the configured Minecraft dependency matrix:
@@ -161,7 +134,7 @@ The current publishing targets are:
 - Modrinth project `HwkBvmkg`
 - CurseForge project `1580976`
 
-Developer notes for extending the loader/version matrix live in `docs/adding-minecraft-version.md`.
+Developer notes for adding Minecraft versions live in `docs/adding-minecraft-version.md`.
 
 ## Ignored Files
 
