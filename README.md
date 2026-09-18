@@ -88,8 +88,8 @@ The generated release jars are named with the loader first, then the mod version
 
 ```text
 <!-- autoconnect:artifact-examples:start -->
-autoconnect-fabric-26.7.1-26.2.jar
-autoconnect-fabric-26.7.1-26.3.jar
+autoconnect-fabric-26.9.1-26.2.jar
+autoconnect-fabric-26.9.1-26.3.jar
 <!-- autoconnect:artifact-examples:end -->
 ```
 
